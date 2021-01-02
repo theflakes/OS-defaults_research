@@ -14,6 +14,12 @@ with open('md.json', 'r', encoding='utf-16') as f:
                     (
                         record['ParentPath'],)
                     )
+        c.execute("INSERT OR IGNORE INTO Item (name, base_name, extension) VALUES(?, ?, ?)", 
+                    (
+                        record['Name'],
+                        record["BaseName"],
+                        record['Extension'])
+                    )
 
 db.commit()
 db.close()
