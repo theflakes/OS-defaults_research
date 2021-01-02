@@ -3,11 +3,14 @@
 import sqlite3
 import json
 
-sqlite3.connect('OS_defaults.db')
+db = sqlite3.connect('OS_defaults.db')
+c = db.cursor
 
 # have to specify encoding, may need to handle this more elegantly for other OS'
 with open("md.json", 'r', encoding='utf-16') as f:
     for line in f:
         record = json.loads(line)
-        
+        c.execute()
 
+db.commit()
+db.close()
