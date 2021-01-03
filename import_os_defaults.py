@@ -88,11 +88,11 @@ with open('md.json', 'r', encoding='utf-16') as f:
         record = json.loads(line)
         if record['LinkType']:
             for link in record['LinkType']:
-                # Get the Links IDs
+                # Get the Link's IDs
                 o_id, d_id, i_id = get_os_directory_item_ids(c, '10 Pro N', record['ParentPath'], record['Name'])
                 link_id = get_os_directory_item_id(o_id, d_id, i_id)
 
-                # Get the Links target IDs
+                # Get the Link's target IDs
                 path_item = link.rsplit('\\', 1)
                 o_id, d_id, i_id = get_os_directory_item_ids(c, '10 Pro N', path_item[0], path_item[1])
                 target_id = get_os_directory_item_id(o_id, d_id, i_id)
