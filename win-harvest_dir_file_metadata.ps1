@@ -60,7 +60,7 @@ Function Get-MetaData {
 #>
 $is_x64 = [System.Environment]::Is64BitOperatingSystem
 $version = [Environment]::OSVersion.Version.ToString()
-$productName = Get-ComputerInfo | select WindowsProductName.WindowsProductName
+$productName = gwmi win32_operatingsystem | % caption
 
 if ($recurse) {
     Get-ChildItem -Force -Recurse | ForEach-Object {
