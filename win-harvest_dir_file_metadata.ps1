@@ -11,6 +11,14 @@ Function Get-MetaData {
     )
 
     $md = New-Object psobject
+
+    if ($is_x64) {
+        $md | Add-Member -type NoteProperty -name arch -value 64
+    } else {
+        $md | Add-Member -type NoteProperty -name arch -value 32
+    }
+    $md | Add-Member -type NoteProperty -name version -value $version
+    $md | Add-Member -type NoteProperty -name os -value $productName
     
     # Get File/Directory metadata
     $md | Add-Member -type NoteProperty -name ParentPath -value ($item.PSParentPath -split "::")[1]
@@ -50,6 +58,10 @@ Function Get-MetaData {
 <#
     MAIN
 #>
+$is_x64 = [System.Environment]::Is64BitOperatingSystem
+$version = [Environment]::OSVersion.Version.ToString()
+$productName = Get-ComputerInfo | select WindowsProductName.WindowsProductName
+
 if ($recurse) {
     Get-ChildItem -Force -Recurse | ForEach-Object {
         Get-MetaData $_
