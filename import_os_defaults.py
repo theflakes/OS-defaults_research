@@ -46,14 +46,15 @@ with open('md.json', 'r', encoding='utf-16') as f:
                 )
 
         o_id, d_id, i_id = get_os_directory_item_ids(c, '10 Pro N', record['ParentPath'], record['Name'])
-        c.execute("INSERT OR REPLACE INTO OS_Directory_Item (os_id, directory_id, item_id, mode, size, link_type) VALUES(?, ?, ?, ?, ?, ?);", 
+        c.execute("INSERT OR REPLACE INTO OS_Directory_Item (os_id, directory_id, item_id, mode, size, link_type, hidden) VALUES(?, ?, ?, ?, ?, ?, ?);", 
                     (
                         o_id,
                         d_id,
                         i_id,
                         record['Mode'],
                         record['Size'],
-                        record['LinkType']
+                        record['LinkType'],
+                        record['Hidden']
                     )
                 )
 
