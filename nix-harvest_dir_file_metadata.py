@@ -26,9 +26,8 @@ def get_metadata(parent_dir, path, item):
         else:
             extension = None
         md = os.stat(path)
-        mode = stat.filemode(md.st_mode)
         log['Extension'] = extension
-        log['Mode'] = mode
+        log['Mode'] = stat.filemode(md.st_mode)
         log['ParentPath'] = parent_dir
         log['BaseName'] = item
         log['Name'] = item
