@@ -1,10 +1,10 @@
-CREATE TABLE sqlite_sequence(name,seq);
 CREATE TABLE IF NOT EXISTS "Arch" (
 	"id"	INTEGER NOT NULL UNIQUE,
 	"arch"	TEXT NOT NULL,
 	"bits"	INTEGER NOT NULL,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
+CREATE TABLE sqlite_sequence(name,seq);
 CREATE TABLE IF NOT EXISTS "ADS" (
 	"id"	INTEGER NOT NULL UNIQUE,
 	"name"	TEXT NOT NULL UNIQUE,
@@ -54,8 +54,9 @@ CREATE TABLE IF NOT EXISTS "OS_Directory_Item" (
 	"mode"	TEXT NOT NULL,
 	"size"	INTEGER NOT NULL,
 	"link_type"	TEXT,
+	"hidden"	TEXT NOT NULL,
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("os_id") REFERENCES "OS"("id"),
-	FOREIGN KEY("item_id") REFERENCES "Item"("id"),
-	FOREIGN KEY("directory_id") REFERENCES "Directory"("id")
+	FOREIGN KEY("directory_id") REFERENCES "Directory"("id"),
+	FOREIGN KEY("item_id") REFERENCES "Item"("id")
 );
