@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param (
     [switch] $recurse = $false,
-    [switch] $pretty = $false
+    [switch] $pretty = $false,
+    [string] $directory = "C:\"
 )
 
 Function Get-MetaData {
@@ -28,6 +29,11 @@ Function Get-MetaData {
     $md | Add-Member -type NoteProperty -name Mode -value $item.Mode
     $md | Add-Member -type NoteProperty -name Size -value $item.Length
     $md | Add-Member -type NoteProperty -name LinkType -value $item.LinkType
+    if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
+        $md | Add-Member -type NoteProperty -name Hidden -value $true
+    } else {
+        $md | Add-Member -type NoteProperty -name Hidden -value $false
+    }
     if ($item.LinkType) {
         $md | Add-Member -type NoteProperty -name Links -value $item.Target
     } else {
@@ -64,10 +70,10 @@ $productName = gwmi win32_operatingsystem | % caption
 
 if ($recurse) {
     Get-ChildItem -Force -Recurse | ForEach-Object {
-        Get-MetaData $_
+        Get-MetaData $directory
     }
 } else {
     Get-ChildItem -Force | ForEach-Object {
-        Get-MetaData $_
+        Get-MetaData $directory
     }
 }
