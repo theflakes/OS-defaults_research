@@ -39,14 +39,28 @@ def get_metadata(parent_dir, path, item):
         print_log(log)
 
 
-def walk_tree(dir):
-    for root, directories, files in os.walk(dir):
+def walk_tree_recurse(dir):
+    for root, directories, files in os.walk(dir, followlinks=False):
         for d in directories:
             directory_path = os.path.join(root, d)
             get_metadata(root, directory_path, d)
         for f in files:
             file_path = os.path.join(root, f)
             get_metadata(root, file_path, f)
+
+
+def walk_tree(dir):
+    level = 0
+    for root, directories, files in os.walk(dir, followlinks=False):
+        if level == 1:
+            return
+        for d in directories:
+            directory_path = os.path.join(root, d)
+            get_metadata(root, directory_path, d)
+        for f in files:
+            file_path = os.path.join(root, f)
+            get_metadata(root, file_path, f)
+        level += 1
 
 
 def main(args):
@@ -68,7 +82,10 @@ def main(args):
             pretty = True
         elif opt in ("-d", "--directory"):
             directory = arg
-    walk_tree(directory)
+    if recurse:
+        walk_tree_recurse(directory)
+    else:
+        walk_tree(directory)
 
 
 # main
