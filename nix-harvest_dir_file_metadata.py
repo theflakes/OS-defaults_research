@@ -37,12 +37,14 @@ def get_metadata(parent_dir, path, item):
         else:
             log['Hidden'] = False
         if os.path.islink(path):
+            log['Link'] = True
             linkPath = os.readlink(path)
             if linkPath[0] != '/':
                 log['Links'] = parent_dir + os.readlink(path)
             else:
                 log['Links'] = os.readlink(path)
         else:
+            log['Link'] = False
             log['Links'] = None
         print_log(log)
 

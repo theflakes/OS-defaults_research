@@ -28,15 +28,16 @@ Function Get-MetaData {
     $md | Add-Member -type NoteProperty -name Extension -value $(if ($item.Extension) {$item.Extension} else {$null})
     $md | Add-Member -type NoteProperty -name Mode -value $item.Mode
     $md | Add-Member -type NoteProperty -name Size -value $item.Length
-    $md | Add-Member -type NoteProperty -name LinkType -value $item.LinkType
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
         $md | Add-Member -type NoteProperty -name Hidden -value $true
     } else {
         $md | Add-Member -type NoteProperty -name Hidden -value $false
     }
     if ($item.LinkType) {
+        $md | Add-Member -type NoteProperty -name Link -value $true
         $md | Add-Member -type NoteProperty -name Links -value $item.Target
     } else {
+        $md | Add-Member -type NoteProperty -name Link -value $false
         $md | Add-Member -type NoteProperty -name Links -value $null
     }
 
