@@ -13,6 +13,7 @@ def get_os_directory_item_ids(c, os, path, name):
     i_id = c.fetchone()[0]
     return o_id, d_id, i_id
 
+
 def get_os_directory_item_id(c, o_id, d_id, i_id):
     c.execute("SELECT id FROM OS_Directory_Item WHERE os_id=? AND directory_id=? AND item_id=?;", 
                     (
