@@ -10,6 +10,21 @@ pretty = False
 directory = '/'
 
 
+def init_log():
+    log = {
+        "Name": None,
+        "ParentPath": None,
+        "BaseName": None,
+        "Extension": None,
+        "Mode": None,
+        "Size": None,
+        "Hidden": None,
+        "Link": None,
+        "Links": [None]
+    }
+    return log
+    
+
 def print_log(log):
     if pretty:
         log = json.dumps(log, indent=2)
@@ -19,33 +34,37 @@ def print_log(log):
 
 
 def get_metadata(parent_dir, path, item):
-    log = {}
-    if path is not None and os.path.exists(path):
-        if os.path.isfile(path):
-            extension = os.path.splitext(path)[1] if os.path.splitext(path)[1] else None
-        else:
-            extension = None
-        md = os.stat(path)
-        log['Extension'] = extension
-        log['Mode'] = stat.filemode(md.st_mode)
+    log = init_log()
+    if path is not None:
         log['ParentPath'] = parent_dir
-        log['BaseName'] = item
         log['Name'] = item
-        log['Size'] = md.st_size
-        if item[0] == '.':
-            log['Hidden'] = True
+        if not os.path.isdir(path):
+            nameExt = os.path.splitext(item)
+            log['BaseName'] = nameExt[0]
+            log['Extension'] = nameExt[1] if nameExt[1] else None
         else:
-            log['Hidden'] = False
-        if os.path.islink(path):
+            log['BaseName'] = item
+            log['Extension'] = None
+        if not os.path.islink(path):
+            md = os.stat(path)
+            log['Mode'] = stat.filemode(md.st_mode)
+            log['Size'] = md.st_size
+            log['Link'] = False
+            log['Links'] = [None]
+        else:
+            md = os.lstat(path)
+            log['Mode'] = stat.filemode(md.st_mode)
+            log['Size'] = md.st_size
             log['Link'] = True
             linkPath = os.readlink(path)
             if linkPath[0] != '/':
                 log['Links'] = parent_dir + os.readlink(path)
             else:
-                log['Links'] = os.readlink(path)
+                log['Links'] = [os.readlink(path)]
+        if item[0] == '.':
+            log['Hidden'] = True
         else:
-            log['Link'] = False
-            log['Links'] = None
+            log['Hidden'] = False
         print_log(log)
 
 
