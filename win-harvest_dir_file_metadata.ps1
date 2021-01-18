@@ -5,40 +5,56 @@ param (
     [string] $directory = "C:\"
 )
 
-Function Get-MetaData {
-    [CmdletBinding()]
-    param (
-        $item
-    )
-
-    $md = New-Object psobject
-
-    if ($is_x64) {
-        $md | Add-Member -type NoteProperty -name arch -value 64
-    } else {
-        $md | Add-Member -type NoteProperty -name arch -value 32
+Function Init-Log {
+    $log = New-Object psobject -Property @{
+        Arch = 64
+        Version = $null
+        OS = $null
+        ParentPath = $null
+        Name = $null
+        BaseName = $null
+        Extension = $null
+        Mode = $null
+        Size = $null
+        Hidden = $false
+        Link = $false
+        Links = $null
+        Streams = $null
     }
-    $md | Add-Member -type NoteProperty -name version -value $version
-    $md | Add-Member -type NoteProperty -name os -value $productName
+
+    return $log
+}
+
+Function Print-log($log) {
+    if ($pretty) {
+        $log | ConvertTo-Json
+    } else {
+        $log | ConvertTo-Json -Compress
+    }
+}
+
+Function Get-MetaData($item) {
+    $log = Init-Log
+
+    if (-not $is_x64) {
+        $log.Arch = 32
+    }
+    $log.Version = $version
+    $log.OS = $productName
     
     # Get File/Directory metadata
-    $md | Add-Member -type NoteProperty -name ParentPath -value ($item.PSParentPath -split "::")[1]
-    $md | Add-Member -type NoteProperty -name Name -value $item.Name
-    $md | Add-Member -type NoteProperty -name BaseName -value $item.BaseName
-    $md | Add-Member -type NoteProperty -name Extension -value $(if ($item.Extension) {$item.Extension} else {$null})
-    $md | Add-Member -type NoteProperty -name Mode -value $item.Mode
-    $md | Add-Member -type NoteProperty -name Size -value $item.Length
+    $log.ParentPath = ($item.PSParentPath -split "::")[1]
+    $log.Name = $item.Name
+    $log.BaseName = $item.BaseName
+    $log.Extension = $(if ($item.Extension) {$item.Extension} else {$null})
+    $log.Mode = $item.Mode
+    $log.Size = $item.Length
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
-        $md | Add-Member -type NoteProperty -name Hidden -value $true
-    } else {
-        $md | Add-Member -type NoteProperty -name Hidden -value $false
+        $log.Hidden = $true
     }
     if ($item.LinkType) {
-        $md | Add-Member -type NoteProperty -name Link -value $true
-        $md | Add-Member -type NoteProperty -name Links -value $item.Target
-    } else {
-        $md | Add-Member -type NoteProperty -name Link -value $false
-        $md | Add-Member -type NoteProperty -name Links -value $null
+        $log.Link = $true
+        $log.Links = $item.Target
     }
 
     # Get Alternate Data Streams
@@ -51,14 +67,9 @@ Function Get-MetaData {
         $smd | Add-Member -type NoteProperty -name Size -value $s.Length
         [void]$streams_array.Add($smd)
     }
-    if ($streams_array.Count -eq 0) { $streams_array = $null }
-    $md | Add-Member -type NoteProperty -name Streams -value $streams_array
+    $log.Streams = $streams_array
 
-    if ($pretty) {
-        $md | ConvertTo-Json
-    } else {
-        $md | ConvertTo-Json -Compress
-    }
+    Print-log $log
 }
 
 
@@ -70,11 +81,11 @@ $version = [Environment]::OSVersion.Version.ToString()
 $productName = gwmi win32_operatingsystem | % caption
 
 if ($recurse) {
-    Get-ChildItem -Force -Recurse | ForEach-Object {
-        Get-MetaData $directory
+    Get-ChildItem $directory -Force -Recurse | ForEach-Object {
+        Get-MetaData $_
     }
 } else {
-    Get-ChildItem -Force | ForEach-Object {
-        Get-MetaData $directory
+    Get-ChildItem $directory -Force | ForEach-Object {
+        Get-MetaData $_
     }
 }

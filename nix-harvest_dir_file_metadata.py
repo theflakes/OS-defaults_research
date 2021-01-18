@@ -12,6 +12,9 @@ directory = '/'
 
 def init_log():
     log = {
+        "Arch": 64,
+        "Version": None,
+        "OS": None,
         "Name": None,
         "ParentPath": None,
         "BaseName": None,
@@ -20,7 +23,8 @@ def init_log():
         "Size": None,
         "Hidden": False,
         "Link": False,
-        "Links": [None]
+        "Links": [None],
+        "Streams": None
     }
     return log
     
