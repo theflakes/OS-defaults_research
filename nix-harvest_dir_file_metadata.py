@@ -18,8 +18,8 @@ def init_log():
         "Extension": None,
         "Mode": None,
         "Size": None,
-        "Hidden": None,
-        "Link": None,
+        "Hidden": False,
+        "Link": False,
         "Links": [None]
     }
     return log
@@ -49,8 +49,6 @@ def get_metadata(parent_dir, path, item):
             md = os.stat(path)
             log['Mode'] = stat.filemode(md.st_mode)
             log['Size'] = md.st_size
-            log['Link'] = False
-            log['Links'] = [None]
         else:
             md = os.lstat(path)
             log['Mode'] = stat.filemode(md.st_mode)
@@ -58,13 +56,11 @@ def get_metadata(parent_dir, path, item):
             log['Link'] = True
             linkPath = os.readlink(path)
             if linkPath[0] != '/':
-                log['Links'] = parent_dir + os.readlink(path)
+                log['Links'] = [parent_dir + os.readlink(path)]
             else:
-                log['Links'] = [os.readlink(path)]
+                log['Links']= [os.readlink(path)]
         if item[0] == '.':
             log['Hidden'] = True
-        else:
-            log['Hidden'] = False
         print_log(log)
 
 
