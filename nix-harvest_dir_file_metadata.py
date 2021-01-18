@@ -34,8 +34,8 @@ def print_log(log):
 
 
 def get_metadata(parent_dir, path, item):
-    log = init_log()
     if path is not None:
+        log = init_log()
         log['ParentPath'] = parent_dir
         log['Name'] = item
         if not os.path.isdir(path):
