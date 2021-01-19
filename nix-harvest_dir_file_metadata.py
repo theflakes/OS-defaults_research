@@ -4,6 +4,7 @@ import os, sys, stat
 import getopt
 import json
 import hashlib
+import platform
 
 
 recurse = False
@@ -16,13 +17,15 @@ BUF_SIZE = 65536
 md5 = hashlib.md5()
 sha1 = hashlib.sha1()
 sha256 = hashlib.sha256()
-
+arch = platform.architecture()[0][0:2]
+version = platform.version()
+oper = platform.system()
 
 def init_log():
     log = {
-        "Arch": 64,
-        "Version": None,
-        "OS": None,
+        "Arch": arch,
+        "Version": version,
+        "OS": oper,
         "Name": None,
         "ParentPath": None,
         "BaseName": None,
