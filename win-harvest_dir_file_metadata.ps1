@@ -3,7 +3,7 @@ param (
     [switch] $recurse = $false,
     [switch] $pretty = $false,
     [switch] $hashfiles = $false
-    [string] $directory = "C:\"
+    [string] $directory = "$env:SYSTEMDRIVE\"
 )
 
 Function Init-Log {
