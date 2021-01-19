@@ -2,6 +2,7 @@
 param (
     [switch] $recurse = $false,
     [switch] $pretty = $false,
+    [switch] $hashfiles = $false
     [string] $directory = "C:\"
 )
 
@@ -20,6 +21,9 @@ Function Init-Log {
         Link = $false
         Links = $null
         Streams = $null
+        md5 = $null
+        sha1 = $null
+        sha256 = $null
     }
 
     return $log
@@ -55,6 +59,10 @@ Function Get-MetaData($item) {
     if ($item.LinkType) {
         $log.Link = $true
         $log.Links = $item.Target
+    } elseif (hashFile -and -not $item.PSIsContainer()) {
+        $log.md5 = Get-FileHash $item -Algorithm md5
+        $log.sha1 = Get-FileHash $item -Algorithm sha1
+        $log.sha256 = Get-FileHash $item -Algorithm sha256
     }
 
     # Get Alternate Data Streams

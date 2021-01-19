@@ -3,11 +3,19 @@
 import os, sys, stat
 import getopt
 import json
+import hashlib
 
 
 recurse = False
 pretty = False
 directory = '/'
+hashFile = False
+BUF_SIZE = 65536
+
+
+md5 = hashlib.md5()
+sha1 = hashlib.sha1()
+sha256 = hashlib.sha256()
 
 
 def init_log():
@@ -24,7 +32,10 @@ def init_log():
         "Hidden": False,
         "Link": False,
         "Links": [None],
-        "Streams": None
+        "Streams": None,
+        "md5": None,
+        "sha1": None,
+        "sha256": None
     }
     return log
     
@@ -35,6 +46,18 @@ def print_log(log):
     else:
         log = json.dumps(log)
     print(log)
+    
+
+def hash_file(path):
+    with open(path, 'rb') as f:
+        while True:
+            data = f.read(BUF_SIZE)
+            if not data:
+                break
+            md5.update(data)
+            sha1.update(data)
+            sha256.update(data)
+    return md5.hexdigest(), sha1.hexdigest(), sha256.hexdigest()
 
 
 def get_metadata(parent_dir, path, item):
@@ -46,6 +69,8 @@ def get_metadata(parent_dir, path, item):
             nameExt = os.path.splitext(item)
             log['BaseName'] = nameExt[0]
             log['Extension'] = nameExt[1] if nameExt[1] else None
+            if hashFile:
+                log['md5'], log['sha1'], log['sha256'] = hash_file(path)
         else:
             log['BaseName'] = item
             log['Extension'] = None
@@ -92,18 +117,21 @@ def walk_tree(dir):
         level += 1
 
 
+def print_help():
+    print("\nnix-harvest_dir_file_metadata.py -r -p -d '/' -f")
+    print("[*]  Root privileges may be needed to examine all items.\n")
+
+
 def main(args):
-    global recurse
-    global pretty
-    global directory
+    global recurse, pretty, directory, hashFile
     try:
-        opts, args = getopt.getopt(args, "hrpd:", ["--help", "--recurse", "--pretty", "--directory"])
+        opts, args = getopt.getopt(args, "hrpsd:", ["help", "recurse", "pretty", "hashfiles", "directory"])
     except getopt.GetoptError:
-        print("nix-harvest_dir_file_metadata.py -r -p -d '/'")
+        print_help()
         sys.exit(2)
     for opt, arg in opts:
-        if opt == '-h':
-            print("nix-harvest_dir_file_metadata.py -r -p -d '/'")
+        if opt in ("-h", "--help"):
+            print_help()
             sys.exit()
         elif opt in ("-r", "--recurse"):
             recurse = True
@@ -111,6 +139,8 @@ def main(args):
             pretty = True
         elif opt in ("-d", "--directory"):
             directory = arg
+        elif opt in ("-s", "--hashfiles"):
+            hashFile = True
     if recurse:
         walk_tree_recurse(directory)
     else:
