@@ -21,6 +21,7 @@ arch = platform.architecture()[0][0:2]
 version = platform.version()
 oper = platform.system()
 
+
 def init_log():
     log = {
         "Arch": arch,
