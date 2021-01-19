@@ -2,7 +2,7 @@
 param (
     [switch] $recurse = $false,
     [switch] $pretty = $false,
-    [switch] $hashfiles = $false,
+    [switch] $hashFiles = $false,
     [string] $directory = "$env:SYSTEMDRIVE\"
 )
 
@@ -21,9 +21,39 @@ Function Init-Log {
         Link = $false
         Links = $null
         Streams = $null
+
         md5 = $null
         sha1 = $null
         sha256 = $null
+
+        FileVersionRaw = $null
+        ProductVersionRaw = $null
+        Comments = $null
+        CompanyName = $null
+        FileBuildPart = $null
+        FileDescription = $null
+        FileMajorPart = $null
+        FileMinorPart = $null
+        FileName = $null
+        FilePrivatePart = $null
+        FileVersion = $null
+        InternalName = $null
+        IsDebug = $null
+        IsPatched = $null
+        IsPrivateBuild = $null
+        IsPreRelease = $null
+        IsSpecialBuild = $null
+        Language = $null
+        LegalCopyright = $null
+        LegalTrademarks = $null
+        OriginalFilename = $null
+        PrivateBuild = $null
+        ProductBuildPart = $null
+        ProductMajorPart = $null
+        ProductMinorPart = $null
+        ProductName = $null
+        ProductPrivatePart = $null
+        ProductVersion = $null
     }
 
     return $log
@@ -59,10 +89,40 @@ Function Get-MetaData($item) {
     if ($item.LinkType) {
         $log.Link = $true
         $log.Links = $item.Target
-    } elseif ($hashFiles -and -not $item.PSIsContainer) {
-        $log.md5 = (Get-FileHash $item.FullName -Algorithm md5).Hash -ErrorAction SilentlyContinue
-        $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1).Hash -ErrorAction SilentlyContinue
-        $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256).Hash -ErrorAction SilentlyContinue
+    } elseif (-not $item.PSIsContainer) {
+        if ($hashFiles) {
+            $log.md5 = (Get-FileHash $item.FullName -Algorithm md5 -ErrorAction SilentlyContinue).Hash
+            $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1 -ErrorAction SilentlyContinue).Hash
+            $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
+        }
+        $log.FileVersionRaw = $item.VersionInfo.FileVersionRaw
+        $log.ProductVersionRaw = $item.VersionInfo.ProductVersionRaw
+        $log.Comments = $item.VersionInfo.Comments
+        $log.CompanyName = $item.VersionInfo.CompanyName
+        $log.FileBuildPart = $item.VersionInfo.FileBuildPart
+        $log.FileDescription = $item.VersionInfo.FileDescription
+        $log.FileMajorPart = $item.VersionInfo.FileMajorPart
+        $log.FileMinorPart = $item.VersionInfo.FileMinorPart
+        $log.FileName = $item.VersionInfo.FileName
+        $log.FilePrivatePart = $item.VersionInfo.FilePrivatePart
+        $log.FileVersion = $item.VersionInfo.FileVersion
+        $log.InternalName = $item.VersionInfo.InternalName
+        $log.IsDebug = $item.VersionInfo.IsDebug
+        $log.IsPatched = $item.VersionInfo.IsPatched
+        $log.IsPrivateBuild = $item.VersionInfo.IsPrivateBuild
+        $log.IsPreRelease = $item.VersionInfo.IsPreRelease
+        $log.IsSpecialBuild = $item.VersionInfo.IsSpecialBuild
+        $log.Language = $item.VersionInfo.Language
+        $log.LegalCopyright = $item.VersionInfo.LegalCopyright
+        $log.LegalTrademarks = $item.VersionInfo.LegalTrademarks
+        $log.OriginalFilename = $item.VersionInfo.OriginalFilename
+        $log.PrivateBuild = $item.VersionInfo.PrivateBuild
+        $log.ProductBuildPart = $item.VersionInfo.ProductBuildPart
+        $log.ProductMajorPart = $item.VersionInfo.ProductMajorPart
+        $log.ProductMinorPart = $item.VersionInfo.ProductMinorPart
+        $log.ProductName = $item.VersionInfo.ProductName
+        $log.ProductPrivatePart = $item.VersionInfo.ProductPrivatePart
+        $log.ProductVersion = $item.VersionInfo.ProductVersion
     }
 
     # Get Alternate Data Streams
