@@ -37,9 +37,40 @@ def init_log():
         "Link": False,
         "Links": [None],
         "Streams": None,
+
         "md5": None,
         "sha1": None,
-        "sha256": None
+        "sha256": None,
+
+        # including unused fields for parity with Windows PowerShell harvester
+        "FileVersionRaw": None,
+        "ProductVersionRaw": None,
+        "Comments": None,
+        "CompanyName": None,
+        "FileBuildPart": None,
+        "FileDescription": None,
+        "FileMajorPart": None,
+        "FileMinorPart": None,
+        "FileName": None,
+        "FilePrivatePart": None,
+        "FileVersion": None,
+        "InternalName": None,
+        "IsDebug": None,
+        "IsPatched": None,
+        "IsPrivateBuild": None,
+        "IsPreRelease": None,
+        "IsSpecialBuild": None,
+        "Language": None,
+        "LegalCopyright": None,
+        "LegalTrademarks": None,
+        "OriginalFilename": None,
+        "PrivateBuild": None,
+        "ProductBuildPart": None,
+        "ProductMajorPart": None,
+        "ProductMinorPart": None,
+        "ProductName": None,
+        "ProductPrivatePart": None,
+        "ProductVersion": None,
     }
     return log
     
