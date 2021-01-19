@@ -2,7 +2,7 @@
 param (
     [switch] $recurse = $false,
     [switch] $pretty = $false,
-    [switch] $hashfiles = $false
+    [switch] $hashfiles = $false,
     [string] $directory = "$env:SYSTEMDRIVE\"
 )
 
@@ -59,10 +59,10 @@ Function Get-MetaData($item) {
     if ($item.LinkType) {
         $log.Link = $true
         $log.Links = $item.Target
-    } elseif (hashFile -and -not $item.PSIsContainer()) {
-        $log.md5 = Get-FileHash $item -Algorithm md5
-        $log.sha1 = Get-FileHash $item -Algorithm sha1
-        $log.sha256 = Get-FileHash $item -Algorithm sha256
+    } elseif ($hashFiles -and -not $item.PSIsContainer) {
+        $log.md5 = (Get-FileHash $item.FullName -Algorithm md5).Hash -ErrorAction SilentlyContinue
+        $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1).Hash -ErrorAction SilentlyContinue
+        $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256).Hash -ErrorAction SilentlyContinue
     }
 
     # Get Alternate Data Streams
