@@ -11,22 +11,23 @@ recurse = False
 pretty = False
 directory = '/'
 hash_files = False
-BUF_SIZE = 65536
 
 
 md5 = hashlib.md5()
 sha1 = hashlib.sha1()
 sha256 = hashlib.sha256()
-arch = platform.architecture()[0][0:2]
-version = platform.version()
-oper = platform.system()
+
+BUF_SIZE = 65536
+ARCH = platform.architecture()[0][0:2]
+VERSION = platform.version()
+OPER = platform.system()
 
 
 def init_log():
     log = {
-        "Arch": arch,
-        "Version": version,
-        "OS": oper,
+        "Arch": ARCH,
+        "Version": VERSION,
+        "OS": OPER,
         "Name": None,
         "ParentPath": None,
         "BaseName": None,
