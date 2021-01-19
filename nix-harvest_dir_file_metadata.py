@@ -10,7 +10,7 @@ import platform
 recurse = False
 pretty = False
 directory = '/'
-hashFile = False
+hash_files = False
 BUF_SIZE = 65536
 
 
@@ -104,7 +104,7 @@ def get_metadata(parent_dir, path, item):
             nameExt = os.path.splitext(item)
             log['BaseName'] = nameExt[0]
             log['Extension'] = nameExt[1] if nameExt[1] else None
-            if hashFile:
+            if hash_files:
                 log['md5'], log['sha1'], log['sha256'] = hash_file(path)
         else:
             log['BaseName'] = item
@@ -158,7 +158,7 @@ def print_help():
 
 
 def main(args):
-    global recurse, pretty, directory, hashFile
+    global recurse, pretty, directory, hash_files
     try:
         opts, args = getopt.getopt(args, "hrpsd:", ["help", "recurse", "pretty", "hashfiles", "directory"])
     except getopt.GetoptError:
@@ -175,7 +175,7 @@ def main(args):
         elif opt in ("-d", "--directory"):
             directory = arg
         elif opt in ("-s", "--hashfiles"):
-            hashFile = True
+            hash_files = True
     if recurse:
         walk_tree_recurse(directory)
     else:
