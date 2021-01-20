@@ -95,7 +95,6 @@ class Harvest(object):
         except:
             return None, None, None
         
-
     def get_metadata(self, parent_dir, path, item):
         if path is not None:
             log = self.init_log()
