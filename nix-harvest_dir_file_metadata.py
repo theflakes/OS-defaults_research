@@ -82,15 +82,19 @@ class Harvest(object):
         print(log)
         
     def hash_file(self, path):
-        with open(path, 'rb') as f:
-            while True:
-                data = f.read(self.BUF_SIZE)
-                if not data:
-                    break
-                self.md5.update(data)
-                self.sha1.update(data)
-                self.sha256.update(data)
-        return self.md5.hexdigest(), self.sha1.hexdigest(), self.sha256.hexdigest()
+        try:
+            with open(path, 'rb') as f:
+                while True:
+                    data = f.read(self.BUF_SIZE)
+                    if not data:
+                        break
+                    self.md5.update(data)
+                    self.sha1.update(data)
+                    self.sha256.update(data)
+            return self.md5.hexdigest(), self.sha1.hexdigest(), self.sha256.hexdigest()
+        except:
+            return None, None, None
+        
 
     def get_metadata(self, parent_dir, path, item):
         if path is not None:
@@ -124,27 +128,16 @@ class Harvest(object):
                 log['Hidden'] = True
             self.print_log(log)
 
-    def walk_tree_recurse(self):
-        for root, directories, files in os.walk(self.directory, followlinks=False):
-            for d in directories:
-                directory_path = os.path.join(root, d)
-                self.get_metadata(root, directory_path, d)
-            for f in files:
-                file_path = os.path.join(root, f)
-                self.get_metadata(root, file_path, f)
-
     def walk_tree(self):
-        level = 0
         for root, directories, files in os.walk(self.directory, followlinks=False):
-            if level == 1:
-                return
             for d in directories:
                 directory_path = os.path.join(root, d)
                 self.get_metadata(root, directory_path, d)
             for f in files:
                 file_path = os.path.join(root, f)
                 self.get_metadata(root, file_path, f)
-            level += 1
+            if not self.recurse:
+                return
 
 
 def print_help():
@@ -175,10 +168,7 @@ def main(args):
         elif opt in ("-s", "--hashfiles"):
             hash_files = True
     harvest = Harvest(directory, recurse, pretty, hash_files)
-    if recurse:
-        harvest.walk_tree_recurse()
-    else:
-        harvest.walk_tree()
+    harvest.walk_tree()
 
 
 # main
