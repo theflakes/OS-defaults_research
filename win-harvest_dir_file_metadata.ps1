@@ -26,8 +26,6 @@ Function Init-Log {
         sha1 = $null
         sha256 = $null
 
-        FileVersionRaw = $null
-        ProductVersionRaw = $null
         Comments = $null
         CompanyName = $null
         FileBuildPart = $null
@@ -95,8 +93,6 @@ Function Get-MetaData($item) {
             $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1 -ErrorAction SilentlyContinue).Hash
             $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
         }
-        $log.FileVersionRaw = $item.VersionInfo.FileVersionRaw
-        $log.ProductVersionRaw = $item.VersionInfo.ProductVersionRaw
         $log.Comments = $item.VersionInfo.Comments
         $log.CompanyName = $item.VersionInfo.CompanyName
         $log.FileBuildPart = $item.VersionInfo.FileBuildPart

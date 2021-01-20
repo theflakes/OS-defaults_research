@@ -43,8 +43,6 @@ class Harvest(object):
             "sha256": None,
 
             # including unused fields for parity with Windows PowerShell harvester
-            "FileVersionRaw": None,
-            "ProductVersionRaw": None,
             "Comments": None,
             "CompanyName": None,
             "FileBuildPart": None,
