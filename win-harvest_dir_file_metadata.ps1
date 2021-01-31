@@ -11,6 +11,7 @@ Function Init-Log {
         Arch = 64
         Version = $null
         OS = $null
+        
         ParentPath = $null
         Name = $null
         BaseName = $null

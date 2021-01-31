@@ -27,6 +27,7 @@ class Harvest(object):
             "Arch": self.ARCH,
             "Version": self.VERSION,
             "OS": self.OPER,
+            
             "Name": None,
             "ParentPath": None,
             "BaseName": None,
