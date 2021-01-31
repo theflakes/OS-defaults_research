@@ -29,7 +29,7 @@ def get_os_directory_item_hash_id(c, o_id, d_id, i_id, h_id):
     return odi_id
 
 
-db = sqlite3.connect('OS_defaults.db')
+db = sqlite3.connect('os_defaults.db')
 c = db.cursor()
 
 # have to specify encoding, may need to handle this more elegantly for other OS'
