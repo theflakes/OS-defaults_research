@@ -69,7 +69,7 @@ Function Print-log($log) {
 
 Function ConvertTo-BinaryBool($bool) {
     if ($bool) {
-        if ($bool = $true) {
+        if ($bool -eq $true) {
             return 1
         } else {
             return 0
