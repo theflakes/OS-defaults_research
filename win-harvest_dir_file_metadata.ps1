@@ -8,6 +8,7 @@ param (
 
 Function Init-Log {
     $log = New-Object psobject -Property @{
+        DataType = "FileSystem"
         Arch = 64
         Version = $null
         OS = $null
@@ -18,8 +19,8 @@ Function Init-Log {
         Extension = $null
         Mode = $null
         Size = $null
-        Hidden = $false
-        Link = $false
+        Hidden = 0
+        Link = 0
         Links = $null
         Streams = $null
 
@@ -66,6 +67,18 @@ Function Print-log($log) {
     }
 }
 
+Function ConvertTo-BinaryBool($bool) {
+    if ($bool) {
+        if ($bool = $true) {
+            return 1
+        } else {
+            return 0
+        }
+    } else {
+        return $null
+    }
+}
+
 Function Get-MetaData($item) {
     $log = Init-Log
 
@@ -83,10 +96,10 @@ Function Get-MetaData($item) {
     $log.Mode = $item.Mode
     $log.Size = $item.Length
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
-        $log.Hidden = $true
+        $log.Hidden = 1
     }
     if ($item.LinkType) {
-        $log.Link = $true
+        $log.Link = 1
         $log.Links = $item.Target
     } elseif (-not $item.PSIsContainer) {
         if ($hashFiles) {
@@ -104,11 +117,11 @@ Function Get-MetaData($item) {
         $log.FilePrivatePart = $item.VersionInfo.FilePrivatePart
         $log.FileVersion = $item.VersionInfo.FileVersion
         $log.InternalName = $item.VersionInfo.InternalName
-        $log.IsDebug = $item.VersionInfo.IsDebug
-        $log.IsPatched = $item.VersionInfo.IsPatched
-        $log.IsPrivateBuild = $item.VersionInfo.IsPrivateBuild
-        $log.IsPreRelease = $item.VersionInfo.IsPreRelease
-        $log.IsSpecialBuild = $item.VersionInfo.IsSpecialBuild
+        $log.IsDebug = ConvertTo-BinaryBool $item.VersionInfo.IsDebug
+        $log.IsPatched = ConvertTo-BinaryBool $item.VersionInfo.IsPatched
+        $log.IsPrivateBuild = ConvertTo-BinaryBool $item.VersionInfo.IsPrivateBuild
+        $log.IsPreRelease = ConvertTo-BinaryBool $item.VersionInfo.IsPreRelease
+        $log.IsSpecialBuild = ConvertTo-BinaryBool $item.VersionInfo.IsSpecialBuild
         $log.Language = $item.VersionInfo.Language
         $log.LegalCopyright = $item.VersionInfo.LegalCopyright
         $log.LegalTrademarks = $item.VersionInfo.LegalTrademarks

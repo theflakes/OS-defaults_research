@@ -24,6 +24,7 @@ class Harvest(object):
 
     def init_log(self):
         log = {
+            "DataType": "FileSystem",
             "Arch": self.ARCH,
             "Version": self.VERSION,
             "OS": self.OPER,
@@ -34,8 +35,8 @@ class Harvest(object):
             "Extension": None,
             "Mode": None,
             "Size": None,
-            "Hidden": False,
-            "Link": False,
+            "Hidden": 0,
+            "Link": 0,
             "Links": [None],
             "Streams": None,
 
@@ -123,7 +124,7 @@ class Harvest(object):
                 else:
                     log['Links']= [os.readlink(path)]
             if item[0] == '.':
-                log['Hidden'] = True
+                log['Hidden'] = 1
             self.print_log(log)
 
     def walk_tree(self):
