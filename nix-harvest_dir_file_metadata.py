@@ -94,6 +94,15 @@ class Harvest(object):
             return self.md5.hexdigest(), self.sha1.hexdigest(), self.sha256.hexdigest()
         except:
             return None, None, None
+
+    def ConvertTo_BinaryBool(bool):
+        if bool is not None:
+            if bool == True:
+                return 1
+            else:
+                return 0
+        else:
+            return None
         
     def get_metadata(self, parent_dir, path, item):
         if path is not None:
