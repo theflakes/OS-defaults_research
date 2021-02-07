@@ -98,8 +98,9 @@ Function Get-MetaData($item) {
     $log.Extension = $(if ($item.Extension) {$item.Extension} else {$null})
     $log.Mode = $item.Mode
     $log.Size = $item.Length
-    $log.Group = (Get-Acl $item.FullName).Owner.Split('\')[1]
-    $log.User = $log.Group
+    $group_user = (Get-Acl $item.FullName)
+    $log.Group = $group_user.Group.Split('\')[1]
+    $log.User = $group_user.Owner.Split('\')[1]
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
         $log.Hidden = 1
     }
