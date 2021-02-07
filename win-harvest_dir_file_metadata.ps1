@@ -54,6 +54,9 @@ Function Init-Log {
         ProductName = $null
         ProductPrivatePart = $null
         ProductVersion = $null
+
+        Group = $null
+        User = $null
     }
 
     return $log
@@ -95,6 +98,8 @@ Function Get-MetaData($item) {
     $log.Extension = $(if ($item.Extension) {$item.Extension} else {$null})
     $log.Mode = $item.Mode
     $log.Size = $item.Length
+    $log.Group = (Get-Acl $item.FullName).Owner.Split('\')[1]
+    $log.User = $log.Group
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
         $log.Hidden = 1
     }

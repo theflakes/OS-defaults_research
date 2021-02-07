@@ -6,6 +6,8 @@ import getopt
 import json
 import hashlib
 import platform
+from grp import getgrgid
+from pwd import getpwuid
 
 class Utilities(object):
     def __init__(self):
@@ -104,6 +106,9 @@ class Harvest(Utilities):
             "ProductName": None,
             "ProductPrivatePart": None,
             "ProductVersion": None,
+
+            "Group": None,
+            "User": None,
         }
         return log
 
@@ -125,11 +130,15 @@ class Harvest(Utilities):
                 md = os.stat(path)
                 log['Mode'] = stat.filemode(md.st_mode)
                 log['Size'] = md.st_size
+                log['Group'] = getgrgid(md.st_gid).gr_name
+                log['User'] = getpwuid(md.st_uid).pw_name
             else:
                 md = os.lstat(path)
                 log['Mode'] = stat.filemode(md.st_mode)
                 log['Size'] = md.st_size
                 log['Link'] = True
+                log['Group'] = getgrgid(md.st_gid).gr_name
+                log['User'] = getpwuid(md.st_uid).pw_name
                 linkPath = os.readlink(path)
                 if linkPath[0] != '/':
                     log['Links'] = [parent_dir + os.readlink(path)]

@@ -4,7 +4,7 @@ import sqlite3
 import json
 
 
-def get_os_directory_item_hash_ids(c, os, path, name, sha256):
+def get_os_directory_item_hash_ids(c, os, path, name, sha256, group, user):
     c.execute("SELECT id FROM OS WHERE version=?", (os,))
     o_id = c.fetchone()[0]
     c.execute("SELECT id FROM Directory WHERE path=?;", (path,))
@@ -13,16 +13,27 @@ def get_os_directory_item_hash_ids(c, os, path, name, sha256):
     i_id = c.fetchone()[0]
     c.execute("SELECT id FROM Hash WHERE sha256=?;", (sha256,))
     h_id = c.fetchone()[0]
-    return o_id, d_id, i_id, h_id
+    c.execute("SELECT id FROM Group_User WHERE name=?;", (group,))
+    g_id = c.fetchone()[0]
+    c.execute("SELECT id FROM Group_User WHERE name=?;", (user,))
+    u_id = c.fetchone()[0]
+    return o_id, d_id, i_id, h_id, g_id, u_id
 
 
-def get_os_directory_item_hash_id(c, o_id, d_id, i_id, h_id):
-    c.execute("SELECT id FROM OS_Directory_Item_Hash WHERE os_id=? AND directory_id=? AND item_id=? AND hash_id=?;", 
+def get_os_directory_item_hash_id(c, o_id, d_id, i_id, h_id, g_id, u_id):
+    c.execute("SELECT id FROM OS_Directory_Item_Hash WHERE os_id=?"                 +
+                                                            "AND directory_id=?"    +
+                                                            "AND item_id=?"         +
+                                                            "AND hash_id=?"         +
+                                                            "AND group_id=?"        +
+                                                            "AND user_id=?;", 
                     (
                         o_id, 
                         d_id, 
                         i_id,
-                        h_id
+                        h_id,
+                        g_id,
+                        u_id
                     )
                 )
     odi_id = c.fetchone()[0]
@@ -57,12 +68,28 @@ with open('md.json', 'r', encoding='utf-16') as f:
                         )
                     )
 
-            o_id, d_id, i_id, h_id = get_os_directory_item_hash_ids(c, record['OS'], record['ParentPath'], record['Name'], record['sha256'])
+            c.execute("INSERT OR REPLACE INTO Group_User (Name) VALUES(?);", 
+                        (
+                            record['Group'],
+                        )
+                    )
+
+            c.execute("INSERT OR REPLACE INTO Group_User (Name) VALUES(?);", 
+                        (
+                            record['User'],
+                        )
+                    )
+
+            o_id, d_id, i_id, h_id, g_id, u_id = get_os_directory_item_hash_ids(c, record['OS'], record['ParentPath'], 
+                                                                                record['Name'], record['sha256'], 
+                                                                                record['Group'], record['User'])
             c.execute("INSERT OR REPLACE INTO OS_Directory_Item_Hash (" +
                             "os_id,"                    +
                             "directory_id,"             +
                             "item_id,"                  +
                             "hash_id,"                  +
+                            "g_id"                      +
+                            "u_id"                      +
                             "mode,"                     +
                             "size,"                     +
                             "is_link,"                  +
@@ -93,12 +120,14 @@ with open('md.json', 'r', encoding='utf-16') as f:
                             "product_name,"             +
                             "product_private_part,"     +
                             "product_version,"          +
-                        "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", 
+                        "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", 
                         (
                             o_id,
                             d_id,
                             i_id,
                             h_id,
+                            g_id,
+                            u_id,
                             record["Mode,"],
                             record["Size,"],
                             record["Link,"],
