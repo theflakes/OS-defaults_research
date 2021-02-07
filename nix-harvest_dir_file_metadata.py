@@ -46,6 +46,7 @@ class Utilities(object):
 
 class Harvest(Utilities):
     def __init__(self, directory, recurse, pretty, hash_files):
+        super().__init__()
         self.directory = directory
         self.recurse = recurse
         self.pretty = pretty
@@ -53,7 +54,6 @@ class Harvest(Utilities):
         self.ARCH = platform.architecture()[0][0:2]
         self.VERSION = platform.version()
         self.OPER = platform.system()
-        super().__init__()
 
     def init_log(self):
         log = {
