@@ -7,20 +7,53 @@ import json
 import hashlib
 import platform
 
+class Utilities(object):
+    def __init__(self):
+        self.md5 = hashlib.md5()
+        self.sha1 = hashlib.sha1()
+        self.sha256 = hashlib.sha256()
+        self.BUF_SIZE = 65536
 
-class Harvest(object):
+    def print_log(self, log):
+        if self.pretty:
+            log = json.dumps(log, indent=2)
+        else:
+            log = json.dumps(log)
+        print(log)
+
+    def ConvertTo_BinaryBool(bool):
+        if bool is not None:
+            if bool == True:
+                return 1
+            else:
+                return 0
+        else:
+            return None
+        
+    def hash_file(self, path):
+        try:
+            with open(path, 'rb') as f:
+                while True:
+                    data = f.read(self.BUF_SIZE)
+                    if not data:
+                        break
+                    self.md5.update(data)
+                    self.sha1.update(data)
+                    self.sha256.update(data)
+            return self.md5.hexdigest(), self.sha1.hexdigest(), self.sha256.hexdigest()
+        except:
+            return None, None, None
+
+class Harvest(Utilities):
     def __init__(self, directory, recurse, pretty, hash_files):
         self.directory = directory
         self.recurse = recurse
         self.pretty = pretty
         self.hash_files = hash_files
-        self.md5 = hashlib.md5()
-        self.sha1 = hashlib.sha1()
-        self.sha256 = hashlib.sha256()
-        self.BUF_SIZE = 65536
         self.ARCH = platform.architecture()[0][0:2]
         self.VERSION = platform.version()
         self.OPER = platform.system()
+        super().__init__()
 
     def init_log(self):
         log = {
@@ -73,37 +106,7 @@ class Harvest(object):
             "ProductVersion": None,
         }
         return log
-    
-    def print_log(self, log):
-        if self.pretty:
-            log = json.dumps(log, indent=2)
-        else:
-            log = json.dumps(log)
-        print(log)
-        
-    def hash_file(self, path):
-        try:
-            with open(path, 'rb') as f:
-                while True:
-                    data = f.read(self.BUF_SIZE)
-                    if not data:
-                        break
-                    self.md5.update(data)
-                    self.sha1.update(data)
-                    self.sha256.update(data)
-            return self.md5.hexdigest(), self.sha1.hexdigest(), self.sha256.hexdigest()
-        except:
-            return None, None, None
 
-    def ConvertTo_BinaryBool(bool):
-        if bool is not None:
-            if bool == True:
-                return 1
-            else:
-                return 0
-        else:
-            return None
-        
     def get_metadata(self, parent_dir, path, item):
         if path is not None:
             log = self.init_log()
