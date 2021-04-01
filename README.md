@@ -9,6 +9,7 @@ Information collected:
  - Directories
  - Child directories
  - Files and the directories they are located in
+ - Windows alternate data streams
  - meta data on files (hashes, PE header stuff, ...)
  - *nix and Windows lnk information
 
