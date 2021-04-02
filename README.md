@@ -14,9 +14,9 @@ Information collected:
  - *nix and Windows lnk information
 
 Instructions:
-Use the "build_db.sql" file with MySQLite to create the DB.
-Run the Python script with root privs.
-Run the PowerShell script with at least Administrator privs if not SYSTEM privs in a 64bit PowerShell console.
+Use the "build_db.sql" file with MySQLite to create the DB.  
+Run the Python script with root privs.  
+Run the PowerShell script with at least Administrator privs if not SYSTEM privs in a 64bit PowerShell console.  
  - Run as SYSTEM "psexec -i -s powershell.exe"
 Import the results into the DB with "import_os_defaults.py".
 
