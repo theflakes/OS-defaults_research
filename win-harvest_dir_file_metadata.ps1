@@ -162,7 +162,7 @@ Function Get-MetaData($item) {
 #>
 $is_x64 = [System.Environment]::Is64BitOperatingSystem
 $version = [Environment]::OSVersion.Version.ToString()
-$productName = gwmi win32_operatingsystem | % caption
+$productName = Get-WmiObject win32_operatingsystem | ForEach-Object caption
 
 if ($recurse) {
     Get-ChildItem $directory -Force -Recurse | ForEach-Object {
