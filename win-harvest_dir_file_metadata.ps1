@@ -108,10 +108,12 @@ function Get-GroupOwner($file) {
     }
 }
 
-function Get-PeInfo($binary) {
+function Get-PeInfo($path) {
     try {
-        return New-Object PeNet.PeFile -ArgumentList $binary
+        $peh = New-Object PeNet.PeFile -ArgumentList $path
+        return $peh
     } catch {
+        Write-Host "got here"
         return $null
     }
 }
