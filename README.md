@@ -12,6 +12,7 @@ Information pertaining to OS install defaults to baseline normal for a given OS.
  - Windows alternate data streams
  - meta data on files (hashes, PE header stuff, ...)
  - *nix and Windows lnk information
+ - PE header information (imphash, imports, ...)
 
 ## Instructions:  
 Use the "build_db.sql" file with MySQLite to create the DB.  
@@ -27,3 +28,6 @@ An SQLite DB is used to store all the metadata and relationships of directories,
  - Build default set of queries for more interesting relationships and information
 
 Example; attacker creates a DLL file in C:\Windows\SysWOW64 that does not exist there by default but does exist in C:\Windows\System32. A good attacker evasion technique as the file will be a legit default OS file name but not in the correct directory.
+
+## References:
+PeNet: https://github.com/secana/PeNet

@@ -1,3 +1,4 @@
 *.exe
 *.dll
+!PeNet.dll
 *.def
