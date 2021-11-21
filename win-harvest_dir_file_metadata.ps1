@@ -82,6 +82,25 @@ Function ConvertTo-BinaryBool($bool) {
     }
 }
 
+function Get-GroupOwner($file) {
+    try {
+        $group_user = (Get-Acl $file)
+        $log.Group = $group_user.Group.Split('\')[1]
+        $log.User = $group_user.Owner.Split('\')[1]
+        return $log.Group, $log.User
+    } catch { 
+        return $null, $null 
+    }
+}
+
+function Get-PeInfo($binary) {
+    try {
+        return New-Object PeNet.PeFile -ArgumentList $binary
+    } catch {
+        return $null
+    }
+}
+
 Function Get-MetaData($item) {
     $log = Init-Log
 
@@ -90,6 +109,7 @@ Function Get-MetaData($item) {
     }
     $log.Version = $version
     $log.OS = $productName
+    $peh = Get-PeInfo $item.FullName
     
     # Get File/Directory metadata
     $log.ParentPath = ($item.PSParentPath -split "::")[1]
@@ -98,9 +118,7 @@ Function Get-MetaData($item) {
     $log.Extension = $(if ($item.Extension) {$item.Extension} else {$null})
     $log.Mode = $item.Mode
     $log.Size = $item.Length
-    $group_user = (Get-Acl $item.FullName)
-    $log.Group = $group_user.Group.Split('\')[1]
-    $log.User = $group_user.Owner.Split('\')[1]
+    $log.Group, $log.User = Get-GroupOwner $item.FullName
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
         $log.Hidden = 1
     }
@@ -163,6 +181,7 @@ Function Get-MetaData($item) {
 $is_x64 = [System.Environment]::Is64BitOperatingSystem
 $version = [Environment]::OSVersion.Version.ToString()
 $productName = Get-WmiObject win32_operatingsystem | ForEach-Object caption
+[System.Reflection.Assembly]::LoadFrom((Get-Location).Path+"\PeNet.dll") | Out-Null
 
 if ($recurse) {
     Get-ChildItem $directory -Force -Recurse | ForEach-Object {
