@@ -113,7 +113,6 @@ function Get-PeInfo($path) {
         $peh = New-Object PeNet.PeFile -ArgumentList $path
         return $peh
     } catch {
-        Write-Host "got here"
         return $null
     }
 }
