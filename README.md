@@ -31,3 +31,4 @@ Example; attacker creates a DLL file in C:\Windows\SysWOW64 that does not exist 
 
 ## References:
 PeNet: https://github.com/secana/PeNet
+SQLite: https://www.sqlite.org/index.html
