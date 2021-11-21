@@ -30,5 +30,5 @@ An SQLite DB is used to store all the metadata and relationships of directories,
 Example; attacker creates a DLL file in C:\Windows\SysWOW64 that does not exist there by default but does exist in C:\Windows\System32. A good attacker evasion technique as the file will be a legit default OS file name but not in the correct directory.
 
 ## References:
-PeNet: https://github.com/secana/PeNet
-SQLite: https://www.sqlite.org/index.html
+PeNet: https://github.com/secana/PeNet  
+SQLite: https://www.sqlite.org/index.html  
