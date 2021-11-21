@@ -82,11 +82,19 @@ Function ConvertTo-BinaryBool($bool) {
     }
 }
 
+function split-string($contents, $str, $segment) {
+    if ($contents.Contains($str)) {
+        return $contents.Split($str)[$segment]
+    } else {
+        return $contents
+    }
+}
+
 function Get-GroupOwner($file) {
     try {
         $group_user = (Get-Acl $file)
-        $log.Group = $group_user.Group.Split('\')[1]
-        $log.User = $group_user.Owner.Split('\')[1]
+        $log.Group = split-string $group_user.Group '\' 1
+        $log.User = split-string $group_user.Owner '\' 1
         return $log.Group, $log.User
     } catch { 
         return $null, $null 
