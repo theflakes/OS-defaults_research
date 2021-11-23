@@ -2361,6 +2361,8 @@ Function Init-Log {
 
         Group = $null
         User = $null
+
+        MimeType = $null
     }
 
     return $log
@@ -2432,6 +2434,7 @@ Function Get-MetaData($item) {
     $log.Mode = $item.Mode
     $log.Size = $item.Length
     $log.Group, $log.User = Get-GroupOwner $item.FullName
+    $log.MimeType = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
         $log.Hidden = 1
     }
@@ -2498,6 +2501,7 @@ $productName = Get-WmiObject win32_operatingsystem | ForEach-Object caption
 # load the DLL to read PE headers
 $peNetBytes = Load-PeNetDll
 [System.Reflection.Assembly]::Load([System.Convert]::FromBase64String($peNetBytes)) | Out-Null
+add-type -AssemblyName System.Web
 
 if ($recurse) {
     Get-ChildItem $directory -Force -Recurse | ForEach-Object {
