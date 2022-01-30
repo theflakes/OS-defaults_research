@@ -60,7 +60,7 @@ class Harvest(Utilities):
     def init_log(self):
         log = {
             "DataType": "FileSystem",
-            "Arch": self.ARCH,
+            "OS_Arch": self.ARCH,
             "Version": self.VERSION,
             "OS": self.OPER,
             
@@ -79,6 +79,16 @@ class Harvest(Utilities):
             "sha1": None,
             "sha256": None,
 
+            "BinArch": None,
+            "IsDLL": None,
+            "IsDriver": None,
+            "IsEXE": None,
+            "IsSigned": None,
+            "IsSignatureValid": None,
+            "Authenticode": None,
+            "Magic": None,
+            "NumberOfSections": None,
+            
             # including unused fields for parity with Windows PowerShell harvester
             "Comments": None,
             "CompanyName": None,

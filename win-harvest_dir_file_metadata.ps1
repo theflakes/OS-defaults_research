@@ -2313,7 +2313,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 Function Init-Log {
     $log = New-Object psobject -Property @{
         DataType = "FileSystem"
-        Arch = 64
+        OS_Arch = 64
         Version = $null
         OS = $null
         
@@ -2331,6 +2331,16 @@ Function Init-Log {
         md5 = $null
         sha1 = $null
         sha256 = $null
+
+        BinArch = $null
+        IsDLL = $null
+        IsDriver = $null
+        IsEXE = $null
+        IsSigned = $null
+        IsSignatureValid = $null
+        Authenticode = $null
+        Magic = $null
+        NumberOfSections = $null
 
         Comments = $null
         CompanyName = $null
@@ -2446,6 +2456,25 @@ Function Get-MetaData($item) {
             $log.md5 = (Get-FileHash $item.FullName -Algorithm md5 -ErrorAction SilentlyContinue).Hash
             $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1 -ErrorAction SilentlyContinue).Hash
             $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
+        }
+        if ($peh) {
+            if ($peh.Is32Bit) {
+                $log.BinArch = 32
+            } elseif ($peh.Is64Bit) {
+                $log.BinArch = 64
+            }
+            $log.IsDLL = $peh.IsDLL
+            $log.IsDriver = $peh.IsDriver
+            $log.IsExe = $peh.IsExe
+            $log.IsSigned = $peh.IsSigned
+            $log.IsSignatureValid = $peh.IsSignatureValid
+            $log.Authenticode = $peh.Authenticode
+            # we need to reverse the text due to endianness
+            if ($r.ImageDosHeader.e_magic) {
+                $temp = (('{0:x}' -f $r.ImageDosHeader.e_magic | out-string).trim())
+                $log.Magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
+            }
+            $log.NumberOfSections = $peh.ImageNtHeaders.NumberofSections
         }
         $log.Comments = $item.VersionInfo.Comments
         $log.CompanyName = $item.VersionInfo.CompanyName
