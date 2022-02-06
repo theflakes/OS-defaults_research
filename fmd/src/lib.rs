@@ -3,6 +3,7 @@ extern crate tree_magic;
 extern crate fuzzyhash;
 
 use libc::{c_char};
+use std::ffi::CStr;
 use std::ffi::CString;
 use std::str;
 use std::path::Path;
@@ -58,9 +59,13 @@ fn get_fuzzy_hash(target_file: &Path) -> io::Result<FuzzyHash> {
 }
 
 #[no_mangle]
-pub extern fn GetMetadata(target_file: &str) -> MetaData {
-    println!("HI");
-    let path = convert_to_path(target_file).unwrap();
+pub extern fn GetMetadata(target_file: *const c_char) -> MetaData {
+    let c_str : &CStr = unsafe {
+        assert!(!target_file.is_null());
+
+        CStr::from_ptr(target_file)
+    };
+    let path = convert_to_path(c_str.to_str().unwrap()).unwrap();
     let mime_type = CString::new(get_mimetype(path).unwrap()).unwrap();
     let fuzzy_hash = CString::new(get_fuzzy_hash(path).unwrap().to_string()).unwrap();
     println!("{:?}", fuzzy_hash);
