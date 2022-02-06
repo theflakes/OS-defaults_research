@@ -2310,6 +2310,12 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 "@
 }
 
+function Load-fmd() {
+    return  @"
+
+"@
+}
+
 Function Init-Log {
     $log = New-Object psobject -Property @{
         DataType = "FileSystem"
