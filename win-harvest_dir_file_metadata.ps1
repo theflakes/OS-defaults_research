@@ -2401,7 +2401,7 @@ Function ConvertTo-BinaryBool($bool) {
     }
 }
 
-function is_dotnet($imps) {
+function Is-DotNet($imps) {
     if ($imps.Count -eq 1) {
         if (($imps[0].dll.ToLower() -eq "mscoree.dll" ) -and ($imps[0].name.ToLower() -eq "_corexemain")) {
             return $true
@@ -2470,7 +2470,7 @@ Function Get-MetaData($item) {
             $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
         }
         if ($peh) {
-            $log.IsDotNet = is_dotnet $peh.ImportedFunctions
+            $log.IsDotNet = Is-DotNet $peh.ImportedFunctions
             if ($peh.Is32Bit) {
                 $log.BinArch = 32
             } elseif ($peh.Is64Bit) {
