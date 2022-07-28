@@ -2310,12 +2310,6 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 "@
 }
 
-function Load-fmd() {
-    return  @"
-
-"@
-}
-
 Function Init-Log {
     $log = New-Object psobject -Property @{
         DataType = "FileSystem"
@@ -2329,21 +2323,24 @@ Function Init-Log {
         Extension = $null
         Mode = $null
         Size = $null
-        Hidden = 0
-        Link = 0
+        IsHidden = $false
+        IsLink = $false
         Links = $null
         Streams = $null
 
         md5 = $null
         sha1 = $null
         sha256 = $null
+        imphash = $null
+        typerefhash = $null
 
         BinArch = $null
-        IsDLL = $null
-        IsDriver = $null
-        IsEXE = $null
-        IsSigned = $null
-        IsSignatureValid = $null
+        IsDLL = $false
+        IsDriver = $false
+        IsEXE = $false
+        IsDotNet = $false
+        IsSigned = $false
+        IsSignatureValid = $false
         Authenticode = $null
         Magic = $null
         NumberOfSections = $null
@@ -2354,15 +2351,15 @@ Function Init-Log {
         FileDescription = $null
         FileMajorPart = $null
         FileMinorPart = $null
-        FileName = $null
+        Path = $null
         FilePrivatePart = $null
         FileVersion = $null
         InternalName = $null
-        IsDebug = $null
-        IsPatched = $null
-        IsPrivateBuild = $null
-        IsPreRelease = $null
-        IsSpecialBuild = $null
+        IsDebug = $false
+        IsPatched = $false
+        IsPrivateBuild = $false
+        IsPreRelease = $false
+        IsSpecialBuild = $false
         Language = $null
         LegalCopyright = $null
         LegalTrademarks = $null
@@ -2402,6 +2399,15 @@ Function ConvertTo-BinaryBool($bool) {
     } else {
         return $null
     }
+}
+
+function is_dotnet($imps) {
+    if ($imps.Count -eq 1) {
+        if (($imps[0].dll.ToLower() -eq "mscoree.dll" ) -and ($imps[0].name.ToLower() -eq "_corexemain")) {
+            return $true
+        }
+    }
+    return $false
 }
 
 function split-string($contents, $str, $segment) {
@@ -2452,10 +2458,10 @@ Function Get-MetaData($item) {
     $log.Group, $log.User = Get-GroupOwner $item.FullName
     $log.MimeType = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
-        $log.Hidden = 1
+        $log.IsHidden = $true
     }
     if ($item.LinkType) {
-        $log.Link = 1
+        $log.IsLink = $true
         $log.Links = $item.Target
     } elseif (-not $item.PSIsContainer) {
         if ($hashFiles) {
@@ -2464,6 +2470,7 @@ Function Get-MetaData($item) {
             $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
         }
         if ($peh) {
+            $log.IsDotNet = is_dotnet $peh.ImportedFunctions
             if ($peh.Is32Bit) {
                 $log.BinArch = 32
             } elseif ($peh.Is64Bit) {
@@ -2481,6 +2488,8 @@ Function Get-MetaData($item) {
                 $log.Magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
             }
             $log.NumberOfSections = $peh.ImageNtHeaders.NumberofSections
+            $log.imphash = $peh.ImpHash
+            $log.typerefhash = $peh.TypeRefHash
         }
         $log.Comments = $item.VersionInfo.Comments
         $log.CompanyName = $item.VersionInfo.CompanyName
@@ -2488,15 +2497,15 @@ Function Get-MetaData($item) {
         $log.FileDescription = $item.VersionInfo.FileDescription
         $log.FileMajorPart = $item.VersionInfo.FileMajorPart
         $log.FileMinorPart = $item.VersionInfo.FileMinorPart
-        $log.FileName = $item.VersionInfo.FileName
+        $log.Path = $item.VersionInfo.FileName
         $log.FilePrivatePart = $item.VersionInfo.FilePrivatePart
         $log.FileVersion = $item.VersionInfo.FileVersion
         $log.InternalName = $item.VersionInfo.InternalName
-        $log.IsDebug = ConvertTo-BinaryBool $item.VersionInfo.IsDebug
-        $log.IsPatched = ConvertTo-BinaryBool $item.VersionInfo.IsPatched
-        $log.IsPrivateBuild = ConvertTo-BinaryBool $item.VersionInfo.IsPrivateBuild
-        $log.IsPreRelease = ConvertTo-BinaryBool $item.VersionInfo.IsPreRelease
-        $log.IsSpecialBuild = ConvertTo-BinaryBool $item.VersionInfo.IsSpecialBuild
+        $log.IsDebug = $item.VersionInfo.IsDebug
+        $log.IsPatched = $item.VersionInfo.IsPatched
+        $log.IsPrivateBuild = $item.VersionInfo.IsPrivateBuild
+        $log.IsPreRelease = $item.VersionInfo.IsPreRelease
+        $log.IsSpecialBuild = $item.VersionInfo.IsSpecialBuild
         $log.Language = $item.VersionInfo.Language
         $log.LegalCopyright = $item.VersionInfo.LegalCopyright
         $log.LegalTrademarks = $item.VersionInfo.LegalTrademarks
