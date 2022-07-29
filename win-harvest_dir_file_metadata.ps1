@@ -2382,6 +2382,11 @@ Function Init-Log {
     return $log
 }
 
+Function Create-File($b64, $filename) {
+    $bytes = [Convert]::FromBase64String($b64)
+    [IO.File]::WriteAllBytes($filename, $bytes)
+}
+
 Function Print-log($log) {
     if ($pretty) {
         $log | ConvertTo-Json

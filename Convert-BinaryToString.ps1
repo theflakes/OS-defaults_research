@@ -17,8 +17,8 @@ function Convert-BinaryToString {
    else {
       throw '$ByteArray is $null.';
    }
-   
-   Write-Output -InputObject $Base64String;
+   $LinesOfEqualLength = $Base64String -Split '(.{96})' | ? {$_}
+   Write-Output -InputObject $LinesOfEqualLength;
 }
 
 Convert-BinaryToString $args[0]
