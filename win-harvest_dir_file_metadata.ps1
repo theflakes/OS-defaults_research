@@ -7,7 +7,7 @@ param (
 )
 
 <#
-    PeNet.dll in Base64, this way we only have to copy one file to the target
+    PeNet.dll in Base64
     DLL loaded in memory and is used to read PE headers
     https://github.com/secana/PeNet
 #>
