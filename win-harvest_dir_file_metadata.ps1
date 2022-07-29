@@ -2312,21 +2312,21 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 Function Init-Log {
     $log = New-Object psobject -Property @{
-        DataType = "FileSystem"
-        OS_Arch = 64
+        data_type = "FileSystem"
+        os_arch = 64
         Version = $null
-        OS = $null
+        os = $null
         
-        ParentPath = $null
-        Name = $null
-        BaseName = $null
-        Extension = $null
-        Mode = $null
-        Size = $null
-        IsHidden = $false
-        IsLink = $false
-        Links = $null
-        Streams = $null
+        parent_path = $null
+        name = $null
+        base_name = $null
+        extension = $null
+        mode = $null
+        size = $null
+        is_hidden = $false
+        is_link = $false
+        links = $null
+        streams = $null
 
         md5 = $null
         sha1 = $null
@@ -2335,48 +2335,48 @@ Function Init-Log {
         imphash = $null
         typerefhash = $null
 
-        BinArch = $null
-        IsDLL = $false
-        IsDriver = $false
-        IsEXE = $false
-        IsDotNet = $false
-        IsSigned = $false
-        IsSignatureValid = $false
-        Authenticode = $null
-        Magic = $null
-        NumberOfSections = $null
+        bin_arch = $null
+        is_dll = $false
+        is_driver = $false
+        is_exe = $false
+        is_dotnet = $false
+        is_signed = $false
+        is_signature_valid = $false
+        authenticode = $null
+        magic = $null
+        number_of_sections = $null
 
-        Comments = $null
-        CompanyName = $null
-        FileBuildPart = $null
-        FileDescription = $null
-        FileMajorPart = $null
-        FileMinorPart = $null
-        Path = $null
-        FilePrivatePart = $null
-        FileVersion = $null
-        InternalName = $null
-        IsDebug = $false
-        IsPatched = $false
-        IsPrivateBuild = $false
-        IsPreRelease = $false
-        IsSpecialBuild = $false
-        Language = $null
-        LegalCopyright = $null
-        LegalTrademarks = $null
-        OriginalFilename = $null
-        PrivateBuild = $null
-        ProductBuildPart = $null
-        ProductMajorPart = $null
-        ProductMinorPart = $null
-        ProductName = $null
-        ProductPrivatePart = $null
-        ProductVersion = $null
+        comments = $null
+        company_name = $null
+        file_build_part = $null
+        file_description = $null
+        file_major_part = $null
+        file_minor_part = $null
+        path = $null
+        file_private_part = $null
+        file_version = $null
+        internal_name = $null
+        is_debug = $false
+        is_patched = $false
+        is_private_build = $false
+        is_prerelease = $false
+        is_special_build = $false
+        language = $null
+        legal_copyright = $null
+        legal_trademarks = $null
+        original_filename = $null
+        private_build = $null
+        product_build_part = $null
+        product_major_part = $null
+        product_minor_part = $null
+        product_name = $null
+        product_private_part = $null
+        product_version = $null
 
-        Group = $null
-        User = $null
+        group = $null
+        user = $null
 
-        MimeType = $null
+        mime_type = $null
     }
 
     return $log
@@ -2443,27 +2443,27 @@ Function Get-MetaData($item) {
     $log = Init-Log
 
     if (-not $is_x64) {
-        $log.Arch = 32
+        $log.os_arch = 32
     }
-    $log.Version = $version
-    $log.OS = $productName
+    $log.version = $version
+    $log.os = $productName
     $peh = Get-PeInfo $item.FullName
     
     # Get File/Directory metadata
-    $log.ParentPath = ($item.PSParentPath -split "::")[1]
-    $log.Name = $item.Name
-    $log.BaseName = $item.BaseName
-    $log.Extension = $(if ($item.Extension) {$item.Extension} else {$null})
-    $log.Mode = $item.Mode
-    $log.Size = $item.Length
-    $log.Group, $log.User = Get-GroupOwner $item.FullName
-    $log.MimeType = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
+    $log.parent_path = ($item.PSParentPath -split "::")[1]
+    $log.name = $item.Name
+    $log.base_name = $item.BaseName
+    $log.extension = $(if ($item.Extension) {$item.Extension} else {$null})
+    $log.mode = $item.Mode
+    $log.size = $item.Length
+    $log.group, $log.User = Get-GroupOwner $item.FullName
+    $log.mime_type = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
     if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
-        $log.IsHidden = $true
+        $log.is_hidden = $true
     }
     if ($item.LinkType) {
-        $log.IsLink = $true
-        $log.Links = $item.Target
+        $log.is_link = $true
+        $log.links = $item.Target
     } elseif (-not $item.PSIsContainer) {
         if ($hashFiles) {
             $log.md5 = (Get-FileHash $item.FullName -Algorithm md5 -ErrorAction SilentlyContinue).Hash
@@ -2472,53 +2472,53 @@ Function Get-MetaData($item) {
             $log.ssdeep = (.\ssdeep.exe -bs $item.FullName).split("`n")[2].Split(",")[0]
         }
         if ($peh) {
-            $log.IsDotNet = Is-DotNet $peh.ImportedFunctions
-            if ($log.IsDotNet) { $log.typerefhash = .\trh.exe $item.FullName }
+            $log.is_dotnet = Is-DotNet $peh.ImportedFunctions
+            if ($log.is_dotnet) { $log.typerefhash = .\trh.exe $item.FullName }
             if ($peh.Is32Bit) {
-                $log.BinArch = 32
+                $log.bin_arch = 32
             } elseif ($peh.Is64Bit) {
-                $log.BinArch = 64
+                $log.bin_arch = 64
             }
-            $log.IsDLL = $peh.IsDLL
-            $log.IsDriver = $peh.IsDriver
-            $log.IsExe = $peh.IsExe
-            $log.IsSigned = $peh.IsSigned
-            $log.IsSignatureValid = $peh.IsSignatureValid
-            $log.Authenticode = $peh.Authenticode
+            $log.is_dll = $peh.IsDLL
+            $log.is_driver = $peh.IsDriver
+            $log.is_exe = $peh.IsExe
+            $log.is_signed = $peh.IsSigned
+            $log.is_signature_valid = $peh.IsSignatureValid
+            $log.authenticode = $peh.Authenticode
             # we need to reverse the text due to endianness
             if ($r.ImageDosHeader.e_magic) {
                 $temp = (('{0:x}' -f $r.ImageDosHeader.e_magic | out-string).trim())
-                $log.Magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
+                $log.magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
             }
-            $log.NumberOfSections = $peh.ImageNtHeaders.NumberofSections
+            $log.number_of_sections = $peh.ImageNtHeaders.NumberofSections
             $log.imphash = $peh.ImpHash
         }
-        $log.Comments = $item.VersionInfo.Comments
-        $log.CompanyName = $item.VersionInfo.CompanyName
-        $log.FileBuildPart = $item.VersionInfo.FileBuildPart
-        $log.FileDescription = $item.VersionInfo.FileDescription
-        $log.FileMajorPart = $item.VersionInfo.FileMajorPart
-        $log.FileMinorPart = $item.VersionInfo.FileMinorPart
-        $log.Path = $item.VersionInfo.FileName
-        $log.FilePrivatePart = $item.VersionInfo.FilePrivatePart
-        $log.FileVersion = $item.VersionInfo.FileVersion
-        $log.InternalName = $item.VersionInfo.InternalName
-        $log.IsDebug = $item.VersionInfo.IsDebug
-        $log.IsPatched = $item.VersionInfo.IsPatched
-        $log.IsPrivateBuild = $item.VersionInfo.IsPrivateBuild
-        $log.IsPreRelease = $item.VersionInfo.IsPreRelease
-        $log.IsSpecialBuild = $item.VersionInfo.IsSpecialBuild
-        $log.Language = $item.VersionInfo.Language
-        $log.LegalCopyright = $item.VersionInfo.LegalCopyright
-        $log.LegalTrademarks = $item.VersionInfo.LegalTrademarks
-        $log.OriginalFilename = $item.VersionInfo.OriginalFilename
-        $log.PrivateBuild = $item.VersionInfo.PrivateBuild
-        $log.ProductBuildPart = $item.VersionInfo.ProductBuildPart
-        $log.ProductMajorPart = $item.VersionInfo.ProductMajorPart
-        $log.ProductMinorPart = $item.VersionInfo.ProductMinorPart
-        $log.ProductName = $item.VersionInfo.ProductName
-        $log.ProductPrivatePart = $item.VersionInfo.ProductPrivatePart
-        $log.ProductVersion = $item.VersionInfo.ProductVersion
+        $log.comments = $item.VersionInfo.Comments
+        $log.company_name = $item.VersionInfo.CompanyName
+        $log.file_build_part = $item.VersionInfo.FileBuildPart
+        $log.file_description = $item.VersionInfo.FileDescription
+        $log.file_major_part = $item.VersionInfo.FileMajorPart
+        $log.file_minor_part = $item.VersionInfo.FileMinorPart
+        $log.path = $item.VersionInfo.FileName
+        $log.file_private_part = $item.VersionInfo.FilePrivatePart
+        $log.file_version = $item.VersionInfo.FileVersion
+        $log.internal_name = $item.VersionInfo.InternalName
+        $log.is_debug = $item.VersionInfo.IsDebug
+        $log.is_patched = $item.VersionInfo.IsPatched
+        $log.is_private_build = $item.VersionInfo.IsPrivateBuild
+        $log.is_prerelease = $item.VersionInfo.IsPreRelease
+        $log.is_special_build = $item.VersionInfo.IsSpecialBuild
+        $log.language = $item.VersionInfo.Language
+        $log.legal_copyright = $item.VersionInfo.LegalCopyright
+        $log.legal_trademarks = $item.VersionInfo.LegalTrademarks
+        $log.original_filename = $item.VersionInfo.OriginalFilename
+        $log.private_build = $item.VersionInfo.PrivateBuild
+        $log.product_build_part = $item.VersionInfo.ProductBuildPart
+        $log.product_major_part = $item.VersionInfo.ProductMajorPart
+        $log.product_minor_part = $item.VersionInfo.ProductMinorPart
+        $log.product_name = $item.VersionInfo.ProductName
+        $log.product_private_part = $item.VersionInfo.ProductPrivatePart
+        $log.product_version = $item.VersionInfo.ProductVersion
     }
 
     # Get Alternate Data Streams
