@@ -31,4 +31,6 @@ Example; attacker creates a DLL file in C:\Windows\SysWOW64 that does not exist 
 
 ## References:
 PeNet: https://github.com/secana/PeNet  
+ssdeep: https://github.com/ssdeep-project/ssdeep  
+TypeRefHasher: https://github.com/GDATASoftwareAG/TypeRefHasher
 SQLite: https://www.sqlite.org/index.html  

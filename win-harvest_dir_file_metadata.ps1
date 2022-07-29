@@ -2331,6 +2331,7 @@ Function Init-Log {
         md5 = $null
         sha1 = $null
         sha256 = $null
+        ssdeep = $null
         imphash = $null
         typerefhash = $null
 
@@ -2468,9 +2469,11 @@ Function Get-MetaData($item) {
             $log.md5 = (Get-FileHash $item.FullName -Algorithm md5 -ErrorAction SilentlyContinue).Hash
             $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1 -ErrorAction SilentlyContinue).Hash
             $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
+            $log.ssdeep = (.\ssdeep.exe -bs $item.FullName).split("`n")[2].Split(",")[0]
         }
         if ($peh) {
             $log.IsDotNet = Is-DotNet $peh.ImportedFunctions
+            if ($log.IsDotNet) { $log.typerefhash = .\trh.exe $item.FullName }
             if ($peh.Is32Bit) {
                 $log.BinArch = 32
             } elseif ($peh.Is64Bit) {
@@ -2489,7 +2492,6 @@ Function Get-MetaData($item) {
             }
             $log.NumberOfSections = $peh.ImageNtHeaders.NumberofSections
             $log.imphash = $peh.ImpHash
-            $log.typerefhash = $peh.TypeRefHash
         }
         $log.Comments = $item.VersionInfo.Comments
         $log.CompanyName = $item.VersionInfo.CompanyName
