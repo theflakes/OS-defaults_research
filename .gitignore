@@ -1,5 +1,3 @@
 /fmd/target
-*.exe
-*.dll
 !PeNet.dll
 *.def
