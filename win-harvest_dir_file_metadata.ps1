@@ -2511,7 +2511,7 @@ Function Get-MetaData($item) {
             $log.authenticode = $peh.Authenticode
             # we need to reverse the text due to endianness
             if ($peh.ImageDosHeader.e_magic) {
-                $temp = (('{0:x}' -f $r.ImageDosHeader.e_magic | out-string).trim())
+                $temp = (('{0:x}' -f $peh.ImageDosHeader.e_magic | out-string).trim())
                 $log.magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
             }
             $log.number_of_sections = $peh.ImageNtHeaders.NumberofSections
