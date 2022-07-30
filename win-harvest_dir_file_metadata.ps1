@@ -2522,7 +2522,7 @@ Function Get-MetaData($item) {
             $log.imports_lib_count = $fmd.binary.imports_lib_count
             $log.imports_func_count = $fmd.binary.imports_func_count
             $log.exports_count = $fmd.binary.exports_count
-            $log.imports = $fmd.binary.imports
+            if ($fmd.binary.imports) { $log.imports = $fmd.binary.imports }
         }
     }
 
