@@ -2356,7 +2356,6 @@ $binary = @{
     file_description = $null
     file_major_part = $null
     file_minor_part = $null
-    path = $null
     file_private_part = $null
     file_version = $null
     internal_name = $null
@@ -2381,6 +2380,7 @@ Function Init-Log {
         os = $null
         
         parent_path = $null
+        path = $null
         name = $null
         base_name = $null
         extension = $null
