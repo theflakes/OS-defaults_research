@@ -2468,6 +2468,7 @@ Function Get-MetaData($item) {
     
     # Get File/Directory metadata
     $log.parent_path = ($item.PSParentPath -split "::")[1]
+    $log.path = $item.FullName
     $log.name = $item.Name
     $log.base_name = $item.BaseName
     $log.extension = $(if ($item.Extension) {$item.Extension} else {$null})
