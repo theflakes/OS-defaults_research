@@ -2474,11 +2474,11 @@ Function Get-MetaData($item) {
             $log.md5 = (Get-FileHash $item.FullName -Algorithm md5 -ErrorAction SilentlyContinue).Hash
             $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1 -ErrorAction SilentlyContinue).Hash
             $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
-            $log.ssdeep = (.\ssdeep.exe -bs $item.FullName).split("`n")[2].Split(",")[0]
+            $log.ssdeep = (.\tools\ssdeep.exe -bs $item.FullName).split("`n")[2].Split(",")[0]
         }
         if ($peh) {
             $log.is_dotnet = Is-DotNet $peh.ImportedFunctions
-            if ($log.is_dotnet) { $log.typerefhash = .\trh.exe $item.FullName }
+            if ($log.is_dotnet) { $log.typerefhash = .\tools\trh.exe $item.FullName }
             if ($peh.Is32Bit) {
                 $log.bin_arch = 32
             } elseif ($peh.Is64Bit) {
