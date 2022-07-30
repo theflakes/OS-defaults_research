@@ -2,7 +2,6 @@
 param (
     [switch] $recurse = $false,
     [switch] $pretty = $false,
-    [switch] $hashFiles = $false,
     [string] $directory = "$env:SYSTEMDRIVE\"
 )
 
@@ -2313,7 +2312,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 Function Init-Log {
     $log = New-Object psobject -Property @{
         data_type = "FileSystem"
-        os_arch = 64
+        is_os_64 = $false
         Version = $null
         os = $null
         
@@ -2323,31 +2322,41 @@ Function Init-Log {
         extension = $null
         mode = $null
         size = $null
-        is_hidden = $false
-        is_link = $false
+        is_hidden = $null
+        is_link = $null
         links = $null
         streams = $null
 
+        entropy = $null
         md5 = $null
         sha1 = $null
         sha256 = $null
         ssdeep = $null
         imphash = $null
+        imphash_sorted = $null
+        imphash_ssdeep = $null
+        imphash_ssdeep_sorted = $null
         typerefhash = $null
 
-        bin_arch = $null
-        is_dll = $false
-        is_driver = $false
-        is_exe = $false
-        is_dotnet = $false
-        is_signed = $false
-        is_signature_valid = $false
+        is_64 = $null
+        is_lib = $null
+        is_driver = $null
+        is_exe = $null
+        is_dotnet = $null
+        is_signed = $null
+        is_signature_valid = $null
         authenticode = $null
         magic = $null
         number_of_sections = $null
+        imports_lib_count = $null
+        imports_func_count = $null
+        imports = $null
+        exports_count = $null
 
         comments = $null
         company_name = $null
+        compile_date = $null
+        debug_date = $null
         file_build_part = $null
         file_description = $null
         file_major_part = $null
@@ -2356,11 +2365,11 @@ Function Init-Log {
         file_private_part = $null
         file_version = $null
         internal_name = $null
-        is_debug = $false
-        is_patched = $false
-        is_private_build = $false
-        is_prerelease = $false
-        is_special_build = $false
+        is_debug = $null
+        is_patched = $null
+        is_private_build = $null
+        is_prerelease = $null
+        is_special_build = $null
         language = $null
         legal_copyright = $null
         legal_trademarks = $null
@@ -2407,15 +2416,6 @@ Function ConvertTo-BinaryBool($bool) {
     }
 }
 
-function Is-DotNet($imps) {
-    if ($imps.Count -eq 1) {
-        if (($imps[0].dll.ToLower() -eq "mscoree.dll" ) -and ($imps[0].name.ToLower() -eq "_corexemain")) {
-            return $true
-        }
-    }
-    return $false
-}
-
 function split-string($contents, $str, $segment) {
     if ($contents.Contains($str)) {
         return $contents.Split($str)[$segment]
@@ -2447,9 +2447,7 @@ function Get-PeInfo($path) {
 Function Get-MetaData($item) {
     $log = Init-Log
 
-    if (-not $is_x64) {
-        $log.os_arch = 32
-    }
+    if ($is_x64) { $log.is_os_64 = $true }
     $log.version = $version
     $log.os = $productName
     $peh = Get-PeInfo $item.FullName
@@ -2462,42 +2460,18 @@ Function Get-MetaData($item) {
     $log.mode = $item.Mode
     $log.size = $item.Length
     $log.group, $log.User = Get-GroupOwner $item.FullName
-    $log.mime_type = [System.Web.MimeMapping]::GetMimeMapping($item.FullName)
-    if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") {
-        $log.is_hidden = $true
-    }
+    if ($item.Name.StartsWith(".") -or $item.Attributes -contains "Hidden") { $log.is_hidden = $true }
     if ($item.LinkType) {
         $log.is_link = $true
         $log.links = $item.Target
     } elseif (-not $item.PSIsContainer) {
-        if ($hashFiles) {
-            $log.md5 = (Get-FileHash $item.FullName -Algorithm md5 -ErrorAction SilentlyContinue).Hash
-            $log.sha1 = (Get-FileHash $item.FullName -Algorithm sha1 -ErrorAction SilentlyContinue).Hash
-            $log.sha256 = (Get-FileHash $item.FullName -Algorithm sha256 -ErrorAction SilentlyContinue).Hash
-            $log.ssdeep = (.\tools\ssdeep.exe -bs $item.FullName).split("`n")[2].Split(",")[0]
-        }
-        if ($peh) {
-            $log.is_dotnet = Is-DotNet $peh.ImportedFunctions
-            if ($log.is_dotnet) { $log.typerefhash = .\tools\trh.exe $item.FullName }
-            if ($peh.Is32Bit) {
-                $log.bin_arch = 32
-            } elseif ($peh.Is64Bit) {
-                $log.bin_arch = 64
-            }
-            $log.is_dll = $peh.IsDLL
-            $log.is_driver = $peh.IsDriver
-            $log.is_exe = $peh.IsExe
-            $log.is_signed = $peh.IsSigned
-            $log.is_signature_valid = $peh.IsSignatureValid
-            $log.authenticode = $peh.Authenticode
-            # we need to reverse the text due to endianness
-            if ($r.ImageDosHeader.e_magic) {
-                $temp = (('{0:x}' -f $r.ImageDosHeader.e_magic | out-string).trim())
-                $log.magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
-            }
-            $log.number_of_sections = $peh.ImageNtHeaders.NumberofSections
-            $log.imphash = $peh.ImpHash
-        }
+        $fmd = ConvertFrom-Json (.\tools\fmd.exe $item.FullName)
+        $log.entropy = $fmd.entropy
+        $log.mime_type = $fmd.mime_type
+        $log.md5 = $fmd.md5
+        $log.sha1 = $fmd.sha1
+        $log.sha256 = $fmd.sha256
+        $log.ssdeep = $fmd.ssdeep
         $log.comments = $item.VersionInfo.Comments
         $log.company_name = $item.VersionInfo.CompanyName
         $log.file_build_part = $item.VersionInfo.FileBuildPart
@@ -2524,6 +2498,32 @@ Function Get-MetaData($item) {
         $log.product_name = $item.VersionInfo.ProductName
         $log.product_private_part = $item.VersionInfo.ProductPrivatePart
         $log.product_version = $item.VersionInfo.ProductVersion
+        if ($peh) {
+            $log.is_dotnet = $fmd.binary.is_dotnet
+            $log.compile_date = $fmd.binary.timestamps.compile
+            $log.debug_date = $fmd.binary.timestamps.debug
+            $log.is_64 = $fmd.binary.is_64
+            $log.is_lib = $peh.IsDLL
+            $log.is_driver = $peh.IsDriver
+            $log.is_exe = $peh.IsExe
+            $log.is_signed = $peh.IsSigned
+            $log.is_signature_valid = $peh.IsSignatureValid
+            $log.authenticode = $peh.Authenticode
+            # we need to reverse the text due to endianness
+            if ($peh.ImageDosHeader.e_magic) {
+                $temp = (('{0:x}' -f $r.ImageDosHeader.e_magic | out-string).trim())
+                $log.magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
+            }
+            $log.number_of_sections = $peh.ImageNtHeaders.NumberofSections
+            $log.imphash = $peh.ImpHash
+            $log.imphash_sorted = $fmd.binary.imphash_sorted
+            $log.imphash_ssdeep = $fmd.binary.imphash_ssdeep
+            $log.imphash_ssdeep_sorted = $fmd.binary.imphash_ssdeep_sorted
+            $log.imports_lib_count = $fmd.binary.imports_lib_count
+            $log.imports_func_count = $fmd.binary.imports_func_count
+            $log.exports_count = $fmd.binary.exports_count
+            $log.imports = $fmd.binary.imports
+        }
     }
 
     # Get Alternate Data Streams
@@ -2536,7 +2536,7 @@ Function Get-MetaData($item) {
         $smd | Add-Member -type NoteProperty -name Size -value $s.Length
         [void]$streams_array.Add($smd)
     }
-    $log.Streams = $streams_array
+    if ($log.Streams) { $log.streams = $streams_array }
 
     Print-log $log
 }
