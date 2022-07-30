@@ -2398,9 +2398,9 @@ Function Create-File($b64, $filename) {
 
 Function Print-log($log) {
     if ($pretty) {
-        $log | ConvertTo-Json
+        ConvertTo-Json -Depth 100 $log
     } else {
-        $log | ConvertTo-Json -Compress
+        ConvertTo-Json -Depth 100 -Compress $log
     }
 }
 
@@ -2465,7 +2465,7 @@ Function Get-MetaData($item) {
         $log.is_link = $true
         $log.links = $item.Target
     } elseif (-not $item.PSIsContainer) {
-        $fmd = ConvertFrom-Json (.\tools\fmd.exe $item.FullName)
+        $fmd = (.\tools\fmd.exe $item.FullName) | ConvertFrom-Json
         $log.entropy = $fmd.entropy
         $log.mime_type = $fmd.mime_type
         $log.md5 = $fmd.md5
@@ -2522,7 +2522,7 @@ Function Get-MetaData($item) {
             $log.imports_lib_count = $fmd.binary.imports_lib_count
             $log.imports_func_count = $fmd.binary.imports_func_count
             $log.exports_count = $fmd.binary.exports_count
-            if ($fmd.binary.imports) { $log.imports = $fmd.binary.imports }
+            $log.imports = $fmd.binary.imports
         }
     }
 
