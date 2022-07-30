@@ -2309,6 +2309,70 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 "@
 }
 
+$hashes = @{
+    md5 = $null
+    sha1 = $null
+    sha256 = $null
+    ssdeep = $null
+}
+
+$binary_hashes = @{
+    imphash = $null
+    imphash_sorted = $null
+    imphash_ssdeep = $null
+    imphash_ssdeep_sorted = $null
+    typerefhash = $null
+}
+
+$binary = @{
+    is_64 = $null
+    is_lib = $null
+    is_driver = $null
+    is_exe = $null
+    is_dotnet = $null
+    is_signed = $null
+    is_signature_valid = $null
+    is_debug = $null
+    is_patched = $null
+    is_private_build = $null
+    is_prerelease = $null
+    is_special_build = $null
+
+    hashes = $null
+
+    authenticode = $null
+    magic = $null
+    number_of_sections = $null
+    imports_lib_count = $null
+    imports_func_count = $null
+    imports = $null
+    exports = $null
+    exports_count = $null
+    comments = $null
+    company_name = $null
+    compile_date = $null
+    debug_date = $null
+    file_build_part = $null
+    file_description = $null
+    file_major_part = $null
+    file_minor_part = $null
+    path = $null
+    file_private_part = $null
+    file_version = $null
+    internal_name = $null
+    language = $null
+    legal_copyright = $null
+    legal_trademarks = $null
+    original_filename = $null
+    private_build = $null
+    product_build_part = $null
+    product_major_part = $null
+    product_minor_part = $null
+    product_name = $null
+    product_private_part = $null
+    product_version = $null
+}
+
 Function Init-Log {
     $log = New-Object psobject -Property @{
         data_type = "FileSystem"
@@ -2328,59 +2392,9 @@ Function Init-Log {
         streams = $null
 
         entropy = $null
-        md5 = $null
-        sha1 = $null
-        sha256 = $null
-        ssdeep = $null
-        imphash = $null
-        imphash_sorted = $null
-        imphash_ssdeep = $null
-        imphash_ssdeep_sorted = $null
-        typerefhash = $null
-
-        is_64 = $null
-        is_lib = $null
-        is_driver = $null
-        is_exe = $null
-        is_dotnet = $null
-        is_signed = $null
-        is_signature_valid = $null
-        authenticode = $null
-        magic = $null
-        number_of_sections = $null
-        imports_lib_count = $null
-        imports_func_count = $null
-        imports = $null
-        exports_count = $null
-
-        comments = $null
-        company_name = $null
-        compile_date = $null
-        debug_date = $null
-        file_build_part = $null
-        file_description = $null
-        file_major_part = $null
-        file_minor_part = $null
-        path = $null
-        file_private_part = $null
-        file_version = $null
-        internal_name = $null
-        is_debug = $null
-        is_patched = $null
-        is_private_build = $null
-        is_prerelease = $null
-        is_special_build = $null
-        language = $null
-        legal_copyright = $null
-        legal_trademarks = $null
-        original_filename = $null
-        private_build = $null
-        product_build_part = $null
-        product_major_part = $null
-        product_minor_part = $null
-        product_name = $null
-        product_private_part = $null
-        product_version = $null
+        hashes = $null
+        
+        binary = $null
 
         group = $null
         user = $null
@@ -2468,61 +2482,67 @@ Function Get-MetaData($item) {
         $fmd = (.\tools\fmd.exe $item.FullName) | ConvertFrom-Json
         $log.entropy = $fmd.entropy
         $log.mime_type = $fmd.mime_type
-        $log.md5 = $fmd.md5
-        $log.sha1 = $fmd.sha1
-        $log.sha256 = $fmd.sha256
-        $log.ssdeep = $fmd.ssdeep
-        $log.comments = $item.VersionInfo.Comments
-        $log.company_name = $item.VersionInfo.CompanyName
-        $log.file_build_part = $item.VersionInfo.FileBuildPart
-        $log.file_description = $item.VersionInfo.FileDescription
-        $log.file_major_part = $item.VersionInfo.FileMajorPart
-        $log.file_minor_part = $item.VersionInfo.FileMinorPart
-        $log.path = $item.VersionInfo.FileName
-        $log.file_private_part = $item.VersionInfo.FilePrivatePart
-        $log.file_version = $item.VersionInfo.FileVersion
-        $log.internal_name = $item.VersionInfo.InternalName
-        $log.is_debug = $item.VersionInfo.IsDebug
-        $log.is_patched = $item.VersionInfo.IsPatched
-        $log.is_private_build = $item.VersionInfo.IsPrivateBuild
-        $log.is_prerelease = $item.VersionInfo.IsPreRelease
-        $log.is_special_build = $item.VersionInfo.IsSpecialBuild
-        $log.language = $item.VersionInfo.Language
-        $log.legal_copyright = $item.VersionInfo.LegalCopyright
-        $log.legal_trademarks = $item.VersionInfo.LegalTrademarks
-        $log.original_filename = $item.VersionInfo.OriginalFilename
-        $log.private_build = $item.VersionInfo.PrivateBuild
-        $log.product_build_part = $item.VersionInfo.ProductBuildPart
-        $log.product_major_part = $item.VersionInfo.ProductMajorPart
-        $log.product_minor_part = $item.VersionInfo.ProductMinorPart
-        $log.product_name = $item.VersionInfo.ProductName
-        $log.product_private_part = $item.VersionInfo.ProductPrivatePart
-        $log.product_version = $item.VersionInfo.ProductVersion
+        $hashes.md5 = $fmd.md5
+        $hashes.sha1 = $fmd.sha1
+        $hashes.sha256 = $fmd.sha256
+        $hashes.ssdeep = $fmd.ssdeep
+        $log.hashes = $hashes
         if ($peh) {
-            $log.is_dotnet = $fmd.binary.is_dotnet
-            $log.compile_date = $fmd.binary.timestamps.compile
-            $log.debug_date = $fmd.binary.timestamps.debug
-            $log.is_64 = $fmd.binary.is_64
-            $log.is_lib = $peh.IsDLL
-            $log.is_driver = $peh.IsDriver
-            $log.is_exe = $peh.IsExe
-            $log.is_signed = $peh.IsSigned
-            $log.is_signature_valid = $peh.IsSignatureValid
-            $log.authenticode = $peh.Authenticode
+            $binary.is_dotnet = $fmd.binary.is_dotnet
+            if ($binary.is_dotnet) {$binary_hashes.typerefhash = (.\tools\trh.exe $item.FullName) }
+            $binary.hashes = $hashes
+            $binary.comments = $item.VersionInfo.Comments
+            $binary.company_name = $item.VersionInfo.CompanyName
+            $binary.file_build_part = $item.VersionInfo.FileBuildPart
+            $binary.file_description = $item.VersionInfo.FileDescription
+            $binary.file_major_part = $item.VersionInfo.FileMajorPart
+            $binary.file_minor_part = $item.VersionInfo.FileMinorPart
+            $binary.path = $item.VersionInfo.FileName
+            $binary.file_private_part = $item.VersionInfo.FilePrivatePart
+            $binary.file_version = $item.VersionInfo.FileVersion
+            $binary.internal_name = $item.VersionInfo.InternalName
+            $binary.is_debug = $item.VersionInfo.IsDebug
+            $binary.is_patched = $item.VersionInfo.IsPatched
+            $binary.is_private_build = $item.VersionInfo.IsPrivateBuild
+            $binary.is_prerelease = $item.VersionInfo.IsPreRelease
+            $binary.is_special_build = $item.VersionInfo.IsSpecialBuild
+            $binary.language = $item.VersionInfo.Language
+            $binary.legal_copyright = $item.VersionInfo.LegalCopyright
+            $binary.legal_trademarks = $item.VersionInfo.LegalTrademarks
+            $binary.original_filename = $item.VersionInfo.OriginalFilename
+            $binary.private_build = $item.VersionInfo.PrivateBuild
+            $binary.product_build_part = $item.VersionInfo.ProductBuildPart
+            $binary.product_major_part = $item.VersionInfo.ProductMajorPart
+            $binary.product_minor_part = $item.VersionInfo.ProductMinorPart
+            $binary.product_name = $item.VersionInfo.ProductName
+            $binary.product_private_part = $item.VersionInfo.ProductPrivatePart
+            $binary.product_version = $item.VersionInfo.ProductVersion
+            $binary.compile_date = $fmd.binary.timestamps.compile
+            $binary.debug_date = $fmd.binary.timestamps.debug
+            $binary.is_64 = $fmd.binary.is_64
+            $binary.is_lib = $peh.IsDLL
+            $binary.is_driver = $peh.IsDriver
+            $binary.is_exe = $peh.IsExe
+            $binary.is_signed = $peh.IsSigned
+            $binary.is_signature_valid = $peh.IsSignatureValid
+            $binary.authenticode = $peh.Authenticode
             # we need to reverse the text due to endianness
             if ($peh.ImageDosHeader.e_magic) {
                 $temp = (('{0:x}' -f $peh.ImageDosHeader.e_magic | out-string).trim())
-                $log.magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
+                $binary.magic = [string]::Concat(($temp[2..$temp.length] + $temp[0,1]))
             }
-            $log.number_of_sections = $peh.ImageNtHeaders.NumberofSections
-            $log.imphash = $peh.ImpHash
-            $log.imphash_sorted = $fmd.binary.imphash_sorted
-            $log.imphash_ssdeep = $fmd.binary.imphash_ssdeep
-            $log.imphash_ssdeep_sorted = $fmd.binary.imphash_ssdeep_sorted
-            $log.imports_lib_count = $fmd.binary.imports_lib_count
-            $log.imports_func_count = $fmd.binary.imports_func_count
-            $log.exports_count = $fmd.binary.exports_count
-            $log.imports = $fmd.binary.imports
+            $binary.number_of_sections = $peh.ImageNtHeaders.NumberofSections
+            $binary_hashes.imphash = $peh.ImpHash
+            $binary_hashes.imphash_sorted = $fmd.binary.imphash_sorted
+            $binary_hashes.imphash_ssdeep = $fmd.binary.imphash_ssdeep
+            $binary_hashes.imphash_ssdeep_sorted = $fmd.binary.imphash_ssdeep_sorted
+            $binary.hashes = $binary_hashes
+            $binary.imports_lib_count = $fmd.binary.imports_lib_count
+            $binary.imports_func_count = $fmd.binary.imports_func_count
+            $binary.exports_count = $fmd.binary.exports_count
+            $binary.exports = $fmd.binary.exports
+            $binary.imports = $fmd.binary.imports
+            $log.binary = $binary
         }
     }
 
