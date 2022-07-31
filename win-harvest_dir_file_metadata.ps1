@@ -2374,7 +2374,8 @@ $binary = @{
 
 Function Init-Log {
     $log = New-Object psobject -Property @{
-        data_type = "FileSystem"
+        parent_data_type = "FileSystem"
+        data_type = $null
         is_os_64 = $false
         Version = $null
         os = $null
@@ -2479,7 +2480,9 @@ Function Get-MetaData($item) {
     if ($item.LinkType) {
         $log.is_link = $true
         $log.links = $item.Target
+        $log.data_type = "Link"
     } elseif (-not $item.PSIsContainer) {
+        $log.data_type = "File"
         $fmd = (.\tools\fmd.exe $item.FullName) | ConvertFrom-Json
         $log.entropy = $fmd.entropy
         $log.mime_type = $fmd.mime_type
@@ -2545,6 +2548,8 @@ Function Get-MetaData($item) {
             $binary.imports = $fmd.binary.imports
             $log.binary = $binary
         }
+    } else {
+        $log.data_type = "Directory"
     }
 
     # Get Alternate Data Streams
