@@ -15,13 +15,9 @@ Information pertaining to OS install defaults to baseline normal for a given OS.
  - PE header information (imphash, imports, ...)
 
 ## Instructions:  
-Use the "build_db.sql" file with MySQLite to create the DB.  
 Run the Python script with root privs.  
 Run the PowerShell script with at least Administrator privs if not SYSTEM privs in a 64bit PowerShell console.  
  - Run as SYSTEM "psexec -i -s powershell.exe"
-Import the results into the DB with "import_os_defaults.py".
-
-An SQLite DB is used to store all the metadata and relationships of directories, sub directories, files, and links. Refer to the "build_db.sql" to understand tables and their relationships.
 
 ## TO DO:
  - Further testing
