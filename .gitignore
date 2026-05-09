@@ -1,4 +1,5 @@
 *.def
 *.csv
 *.json
-*/target
+**/target
+/target/
