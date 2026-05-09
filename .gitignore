@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 *.def
-<<<<<<< HEAD
 *.csv
 *.json
-=======
-=======
-/target
->>>>>>> master
->>>>>>> e6fd0d98f26101a6aae082f4ef3aedc23e0f3007
+*/target
