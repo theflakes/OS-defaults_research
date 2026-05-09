@@ -3,6 +3,10 @@ name = "misc_windows"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "misc_windows"
+path = "src/main.rs"
+
 [dependencies]
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
