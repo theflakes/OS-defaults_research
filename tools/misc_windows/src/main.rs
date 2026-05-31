@@ -5,58 +5,155 @@ use serde_json::{Map, Value};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use walkdir; // Added missing walkdir dependency
+use walkdir;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     let pretty_mode = args.iter().any(|arg| arg == "--pretty" || arg == "-p");
 
-    // 1. Scheduled Tasks
-    let _ = harvest_scheduled_tasks(pretty_mode);
+    let run = |res: Result<(), Box<dyn std::error::Error>>, name: &str| {
+        if let Err(e) = res {
+            eprintln!("[!] CRITICAL ERROR in {}: {}", name, e);
+        }
+    };
 
-    // 2. PowerShell Harvesters
-    let _ = harvest_via_ps(
-        "Get-CimInstance Win32_Service | Select-Object Name, DisplayName, PathName, State",
-        "wmi_service",
-        pretty_mode,
-    );
-    let _ = harvest_via_ps(
-        "Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess",
-        "network_connection",
-        pretty_mode,
-    );
-    let _ = harvest_via_ps(
-        "Get-DnsClientCache | Select-Object EntryName, Data, Type, Status",
-        "dns_cache",
-        pretty_mode,
-    );
-    let _ = harvest_via_ps(
-        "Get-NetNeighbor -AddressFamily IPv4 | Select-Object IPAddress, LinkLayerAddress, State",
-        "arp_entry",
-        pretty_mode,
-    );
-    let _ = harvest_via_ps(
-        "Get-CimInstance Win32_Process | Select-Object ProcessId, Name, CommandLine",
-        "process",
-        pretty_mode,
+    println!("--- Starting Harvest ---");
+
+    run(harvest_scheduled_tasks(pretty_mode), "Scheduled Tasks");
+
+    run(
+        harvest_via_ps(
+            "Get-CimInstance Win32_Service | Select-Object Name, DisplayName, PathName, State | ConvertTo-Json -Compress",
+            "wmi_service",
+            pretty_mode,
+        ),
+        "WMI Service",
     );
 
-    // 3. Native Named Pipe Harvester (No external tools)
-    let _ = harvest_named_pipes_native(pretty_mode);
+    run(
+        harvest_via_ps(
+            "Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess | ConvertTo-Json -Compress",
+            "network_connection",
+            pretty_mode,
+        ),
+        "Network Connection",
+    );
 
-    // 4. BITS Jobs
-    let _ = harvest_bitsadmin(pretty_mode);
+    run(
+        harvest_via_ps(
+            "Get-DnsClientCache | Select-Object EntryName, Data, Type, Status | ConvertTo-Json -Compress",
+            "dns_cache",
+            pretty_mode,
+        ),
+        "DNS Cache",
+    );
 
+    run(
+        harvest_via_ps(
+            "Get-NetNeighbor -AddressFamily IPv4 | Select-Object IPAddress, LinkLayerAddress, State | ConvertTo-Json -Compress",
+            "arp_entry",
+            pretty_mode,
+        ),
+        "ARP Entry",
+    );
+
+    run(harvest_processes_enriched(pretty_mode), "Process");
+
+    run(harvest_minifilters(pretty_mode), "Minifilters");
+
+    run(harvest_named_pipes_native(pretty_mode), "Named Pipes");
+
+    run(harvest_bitsadmin(pretty_mode), "BITS Jobs");
+
+    println!("--- Harvest Complete ---");
     Ok(())
 }
 
-fn decode_bytes(bytes: &[u8]) -> String {
-    let (res, _encoding_used, _had_errors) = encoding_rs::UTF_8.decode(bytes);
-    if res.contains('\u{0000}') {
-        let (res_u16, _, _) = encoding_rs::UTF_16LE.decode(bytes);
-        return res_u16.trim_matches(char::from(0)).to_string();
+fn harvest_processes_enriched(pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let script = r#"
+        $all = Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId, Name, CommandLine, ExecutablePath
+        $all | ForEach-Object {
+            $p = $_
+            $parent = $all | Where-Object { $_.ProcessId -eq $p.ParentProcessId }
+            [PSCustomObject]@{
+                process_id          = [int]$p.ProcessId
+                name                = $p.Name
+                command_line        = $p.CommandLine
+                path                = $p.ExecutablePath
+                ppid                = [int]$p.ParentProcessId
+                parent_path         = $parent.ExecutablePath
+                parent_command_line = $parent.CommandLine
+            }
+        } | ConvertTo-Json -Compress
+    "#;
+    harvest_via_ps(script, "process", pretty)
+}
+
+fn harvest_minifilters(pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let script = r#"
+        $raw = fltmc instances | Where-Object { $_ -match '\S' }
+        if ($raw.Count -lt 3) { return "[]" }
+
+        # 1. Identify the separator line (the one with the dashes)
+        $separatorLine = $raw | Where-Object { $_ -match '^[- ]+$' }
+        if (-not $separatorLine) { return "[]" }
+
+        # 2. Map the start index of every dash block
+        $matches = [regex]::Matches($separatorLine, '-+')
+        $offsets = $matches | ForEach-Object { $_.Index }
+
+        # 3. Get the header names using these same offsets
+        $headerLine = $raw[0]
+        $colNames = for($i=0; $i -lt $offsets.Count; $i++) {
+            $len = if ($i -lt $offsets.Count - 1) { $offsets[$i+1] - $offsets[$i] } else { $headerLine.Length - $offsets[$i] }
+            $headerLine.Substring($offsets[$i], [math]::Min($len, $headerLine.Length - $offsets[$i])).Trim().Replace(" ", "_").ToLower()
+        }
+
+        # 4. Parse rows using the mapped offsets
+        $data = $raw | Where-Object { $_ -notmatch "Filter Name" -and $_ -notmatch '^[- ]+$' } | ForEach-Object {
+            $line = $_
+            $obj = @{}
+            for($i=0; $i -lt $offsets.Count; $i++) {
+                $start = $offsets[$i]
+                if ($start -lt $line.Length) {
+                    $len = if ($i -lt $offsets.Count - 1) { $offsets[$i+1] - $start } else { $line.Length - $start }
+                    $val = $line.Substring($start, [math]::Min($len, $line.Length - $start)).Trim()
+                    $obj[$colNames[$i]] = $val
+                }
+            }
+            [PSCustomObject]$obj
+        }
+        $data | ConvertTo-Json -Compress
+    "#;
+    harvest_via_ps(script, "minifilter_instance", pretty)
+}
+
+fn harvest_via_ps(
+    script: &str,
+    data_type: &str,
+    pretty: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let output = Command::new("powershell")
+        .args(&["-NoProfile", "-Command", script])
+        .output()?;
+
+    let json_str = String::from_utf8_lossy(&output.stdout);
+    let trimmed = json_str.trim();
+
+    if trimmed.is_empty() || trimmed == "[]" {
+        return Ok(());
     }
-    res.into_owned()
+
+    if let Ok(parsed) = serde_json::from_str::<Value>(trimmed) {
+        if let Some(arr) = parsed.as_array() {
+            for item in arr {
+                print_ordered_sanitized(item.clone(), data_type, pretty)?;
+            }
+        } else {
+            print_ordered_sanitized(parsed, data_type, pretty)?;
+        }
+    }
+    Ok(())
 }
 
 fn harvest_scheduled_tasks(pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
@@ -70,58 +167,37 @@ fn harvest_scheduled_tasks(pretty: bool) -> Result<(), Box<dyn std::error::Error
                     Value::String(entry.path().to_string_lossy().into()),
                 );
 
-                let raw_bytes = fs::read(entry.path())?;
-                let xml_string = decode_bytes(&raw_bytes);
-
-                let mut reader = Reader::from_str(&xml_string);
-                reader.config_mut().trim_text(true);
-
-                let mut buf = Vec::new();
-                let mut current_tag = String::new();
-
-                loop {
-                    match reader.read_event_into(&mut buf) {
-                        Ok(Event::Start(e)) => {
-                            current_tag =
-                                String::from_utf8_lossy(e.local_name().as_ref()).to_string();
-                        }
-                        Ok(Event::Text(e)) => {
-                            if let Ok(val_str) = reader.decoder().decode(&e) {
-                                let val_trimmed = val_str.trim().to_string();
-                                if !val_trimmed.is_empty() && !current_tag.is_empty() {
-                                    let clean_key =
-                                        to_smart_snake_case(&current_tag.replace('\u{0000}', ""));
-                                    task_data.insert(
-                                        clean_key,
-                                        Value::String(val_trimmed.replace('\u{0000}', "")),
-                                    );
+                if let Ok(raw_bytes) = fs::read(entry.path()) {
+                    let xml_string = decode_bytes(&raw_bytes);
+                    let mut reader = Reader::from_str(&xml_string);
+                    reader.config_mut().trim_text(true);
+                    let mut buf = Vec::new();
+                    let mut current_tag = String::new();
+                    loop {
+                        match reader.read_event_into(&mut buf) {
+                            Ok(Event::Start(e)) => {
+                                current_tag =
+                                    String::from_utf8_lossy(e.local_name().as_ref()).to_string();
+                            }
+                            Ok(Event::Text(e)) => {
+                                if let Ok(val_str) = reader.decoder().decode(&e) {
+                                    let val_trimmed = val_str.trim().to_string();
+                                    if !val_trimmed.is_empty() && !current_tag.is_empty() {
+                                        task_data.insert(
+                                            to_smart_snake_case(&current_tag),
+                                            Value::String(val_trimmed),
+                                        );
+                                    }
                                 }
                             }
+                            Ok(Event::End(_)) => current_tag = String::new(),
+                            Ok(Event::Eof) => break,
+                            _ => (),
                         }
-                        Ok(Event::End(_)) => current_tag = String::new(),
-                        Ok(Event::Eof) => break,
-                        _ => (),
+                        buf.clear();
                     }
-                    buf.clear();
+                    print_ordered_sanitized(Value::Object(task_data), "scheduled_task", pretty)?;
                 }
-
-                let exe_path = task_data
-                    .get("command")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                let args = task_data
-                    .get("arguments")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string())
-                    .unwrap_or_default();
-
-                if let Some(path_val) = exe_path {
-                    task_data.insert("path".into(), Value::String(path_val.clone()));
-                    let command_line = format!("{} {}", path_val, args).trim().to_string();
-                    task_data.insert("command_line".into(), Value::String(command_line));
-                }
-
-                print_ordered_sanitized(Value::Object(task_data), "scheduled_task", pretty)?;
             }
         }
     }
@@ -142,44 +218,24 @@ fn harvest_named_pipes_native(pretty: bool) -> Result<(), Box<dyn std::error::Er
             public static extern bool CloseHandle(IntPtr hObject);
         }
 "@
-        if (-not ([System.Management.Automation.PSTypeName]'FileNative').Type) {
-            Add-Type -TypeDefinition $Definition
-        }
-
+        if (-not ([System.Management.Automation.PSTypeName]'FileNative').Type) { Add-Type -TypeDefinition $Definition }
         [System.IO.Directory]::GetFiles('\\.\pipe\') | ForEach-Object {
             $pipePath = $_
             $serverPid = 0
-
-            # Method 1: Win32 API
             $hPipe = [FileNative]::CreateFile($pipePath, 0, 0, [IntPtr]::Zero, 3, 0, [IntPtr]::Zero)
             if ($hPipe.ToInt64() -ne -1) {
                 $outPid = 0
-                if ([FileNative]::GetNamedPipeServerProcessId($hPipe, [ref]$outPid)) {
-                    $serverPid = $outPid
-                }
+                if ([FileNative]::GetNamedPipeServerProcessId($hPipe, [ref]$outPid)) { $serverPid = $outPid }
                 [void][FileNative]::CloseHandle($hPipe)
             }
-
-            # Method 2: Fallback - Parse PID from common pipe name patterns
-            if ($serverPid -eq 0) {
-                if ($pipePath -match '\.(\d+)\.') { $serverPid = $matches[1] }
-                elseif ($pipePath -match '_(\d+)_') { $serverPid = $matches[1] }
-            }
-
             $procName = "Unknown"
             if ($serverPid -gt 0) {
                 $proc = Get-Process -Id $serverPid -ErrorAction SilentlyContinue
                 if ($proc) { $procName = $proc.Name }
             }
-
-            [PSCustomObject]@{
-                pipe_name = $pipePath
-                process = $procName
-                pid = [int]$serverPid
-            }
+            [PSCustomObject]@{ name = $pipePath; process = $procName; pid = [int]$serverPid }
         } | ConvertTo-Json -Compress
     "#;
-
     harvest_via_ps(script, "named_pipe", pretty)
 }
 
@@ -188,7 +244,6 @@ fn harvest_bitsadmin(pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
         .args(&["/list", "/allusers", "/verbose"])
         .output()?;
     let text = String::from_utf8_lossy(&output.stdout);
-
     let keywords = [
         "TYPE:",
         "STATE:",
@@ -200,11 +255,6 @@ fn harvest_bitsadmin(pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
         "MODIFICATION TIME:",
         "COMPLETION TIME:",
         "DESCRIPTION:",
-        "RETRY DELAY:",
-        "ACL FLAGS:",
-        "ERROR COUNT:",
-        "NO PROGRESS TIMEOUT:",
-        "PROXY USAGE:",
     ];
 
     for job_block in text.split("GUID:") {
@@ -212,83 +262,17 @@ fn harvest_bitsadmin(pretty: bool) -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
         let mut map = Map::new();
-
-        // 1. Extract Job ID and Display Name
-        if let Some(first_line) = job_block.lines().next() {
-            let parts: Vec<&str> = first_line.split("DISPLAY:").collect();
-            map.insert("job_id".into(), parts[0].trim().into());
-            if parts.len() > 1 {
-                map.insert(
-                    "display_name".into(),
-                    parts[1].trim().trim_matches('\'').into(),
-                );
-            }
-        }
-
-        // 2. Procedural Keyword Scanning (Fixed unused 'i')
         for &kw in keywords.iter() {
-            if let Some(start_pos) = job_block.find(kw) {
-                let val_start = start_pos + kw.len();
-
-                // Find the nearest next keyword to terminate this value
-                let mut end_pos = job_block.len();
-                for next_kw in keywords.iter() {
-                    if let Some(next_pos) = job_block[val_start..].find(next_kw) {
-                        let absolute_next_pos = val_start + next_pos;
-                        if absolute_next_pos < end_pos {
-                            end_pos = absolute_next_pos;
-                        }
-                    }
-                }
-
-                let value = job_block[val_start..end_pos].trim();
-                if !value.is_empty() {
-                    let clean_key = to_smart_snake_case(kw.trim_matches(':'));
-                    map.insert(clean_key, value.into());
-                }
+            if let Some(start) = job_block.find(kw) {
+                let val_start = start + kw.len();
+                let end = job_block[val_start..]
+                    .find("\r\n")
+                    .unwrap_or(job_block.len() - val_start);
+                let value = job_block[val_start..val_start + end].trim();
+                map.insert(to_smart_snake_case(kw.trim_matches(':')), value.into());
             }
         }
-
-        // 3. File Transfer Parsing
-        for line in job_block.lines() {
-            let l = line.trim();
-            if l.contains("http") && l.contains("->") {
-                let file_parts: Vec<&str> = l.split("->").collect();
-                if file_parts.len() == 2 {
-                    let url_part = file_parts[0].split_whitespace().last().unwrap_or("").trim();
-                    map.insert("remote_url".into(), url_part.into());
-                    map.insert("local_path".into(), file_parts[1].trim().into());
-                }
-            }
-        }
-
         print_ordered_sanitized(Value::Object(map), "bits_job", pretty)?;
-    }
-    Ok(())
-}
-
-fn harvest_via_ps(
-    script: &str,
-    data_type: &str,
-    pretty: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let output = Command::new("powershell")
-        .args(&["-NoProfile", "-Command", script])
-        .output()?;
-
-    let json_str = String::from_utf8_lossy(&output.stdout);
-    if json_str.trim().is_empty() || json_str == "[]" {
-        return Ok(());
-    }
-
-    if let Ok(parsed) = serde_json::from_str::<Value>(&json_str) {
-        if let Some(arr) = parsed.as_array() {
-            for item in arr {
-                print_ordered_sanitized(item.clone(), data_type, pretty)?;
-            }
-        } else {
-            print_ordered_sanitized(parsed, data_type, pretty)?;
-        }
     }
     Ok(())
 }
@@ -301,49 +285,69 @@ fn print_ordered_sanitized(
     let mut clean_map = Map::new();
     if let Value::Object(m) = item {
         for (k, v) in m {
-            if v.is_null() || (v.is_string() && v.as_str().unwrap().is_empty()) || k == "data_type"
+            let snake_key = to_smart_snake_case(&k);
+            if v.is_null()
+                || (v.is_string() && v.as_str().unwrap().is_empty())
+                || snake_key == "data_type"
             {
                 continue;
             }
-            clean_map.insert(k, v);
+            clean_map.insert(snake_key, v);
         }
     }
-    let body_json = serde_json::to_string(&Value::Object(clean_map))?;
-    let mut final_raw = format!("{{\"data_type\":\"{}\",{}", data_type, &body_json[1..]);
-    if pretty {
-        if let Ok(val) = serde_json::from_str::<Value>(&final_raw) {
-            final_raw = serde_json::to_string_pretty(&val)?;
-        }
+
+    let mut final_map = Map::new();
+    final_map.insert("data_type".into(), Value::String(data_type.to_string()));
+    for (k, v) in clean_map {
+        final_map.insert(k, v);
     }
-    println!("{}", final_raw);
+
+    let final_val = Value::Object(final_map);
+    println!(
+        "{}",
+        if pretty {
+            serde_json::to_string_pretty(&final_val)?
+        } else {
+            serde_json::to_string(&final_val)?
+        }
+    );
     Ok(())
 }
 
-fn to_smart_snake_case(s: &str) -> String {
-    if s.chars()
-        .all(|c| c.is_uppercase() || c.is_whitespace() || c == '_')
-    {
-        return s.to_lowercase().replace(' ', "_").replace("__", "_");
+fn decode_bytes(bytes: &[u8]) -> String {
+    let (res, _, _) = encoding_rs::UTF_8.decode(bytes);
+    if res.contains('\u{0000}') {
+        let (res_u16, _, _) = encoding_rs::UTF_16LE.decode(bytes);
+        return res_u16.trim_matches(char::from(0)).to_string();
     }
+    res.into_owned()
+}
 
+fn to_smart_snake_case(s: &str) -> String {
     let mut res = String::new();
     let chars: Vec<char> = s.chars().collect();
     for i in 0..chars.len() {
         let c = chars[i];
         if c.is_uppercase() {
-            if i > 0 && !res.ends_with('_') && chars[i - 1].is_lowercase() {
-                res.push('_');
+            if i > 0 && !res.ends_with('_') {
+                let prev = chars[i - 1];
+                let next = if i + 1 < chars.len() {
+                    Some(chars[i + 1])
+                } else {
+                    None
+                };
+                if prev.is_lowercase() || (next.is_some() && next.unwrap().is_lowercase()) {
+                    res.push('_');
+                }
             }
             res.push(c.to_ascii_lowercase());
-        } else if c.is_whitespace() {
-            res.push('_');
+        } else if c.is_whitespace() || c == '-' || c == '.' {
+            if !res.ends_with('_') {
+                res.push('_');
+            }
         } else {
             res.push(c);
         }
     }
-    res.replace("i_p", "ip")
-        .replace("u_r_i", "uri")
-        .replace("__", "_")
-        .trim_matches('_')
-        .to_string()
+    res.replace("__", "_").trim_matches('_').to_string()
 }
